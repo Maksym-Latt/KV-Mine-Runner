@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -86,7 +88,19 @@ fun MenuScreen(
                     .padding(top = 32.dp)
             )
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(5f))
+
+            Image(
+                painter = painterResource(R.drawable.chicken_title),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .aspectRatio(0.85f)
+                    .weight(1f, fill = false),
+                contentScale = ContentScale.Fit
+            )
+
+            Spacer(modifier = Modifier.weight(5f))
 
             PrimaryButton(
                 text = "START",
@@ -103,7 +117,7 @@ fun MenuScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.weight(1.5f))
         }
 
         if (settingsVisible) {

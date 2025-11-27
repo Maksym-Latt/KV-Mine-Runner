@@ -71,10 +71,11 @@ fun SettingsOverlay(
                 .wrapContentHeight()
                 .clip(RoundedCornerShape(20.dp))
                 .background(
-                    Brush.verticalGradient(
+                    Brush.horizontalGradient(
                         listOf(
-                            Color(0xFF3DB2FF),
-                            Color(0xFF1D8FE1)
+                            Color(0xff286298),
+                            Color(0xff519ee4),
+                            Color(0xff296398)
                         )
                     )
                 )
@@ -112,7 +113,8 @@ fun SettingsOverlay(
                     onClick = { onMusicToggle(!musicEnabled) },
                     style = ChickenButtonStyle.Blue,
                     fontSize = 22.sp,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+
                 )
 
                 PrimaryButton(

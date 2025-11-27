@@ -56,22 +56,35 @@ class GameViewModel @Inject constructor(
     fun swipe(dir: SwipeDirection) {
         _ui.update { st ->
             if (st.status !is GameStatus.Running) return@update st
-            when (dir) {
-                SwipeDirection.Left -> {
-                    val idx = GameConfig.columns.indexOf(st.chickenColumn)
-                    val nextIdx = (idx - 1).coerceAtLeast(0)
-                    st.copy(chickenColumn = GameConfig.columns[nextIdx])
-                }
 
-                SwipeDirection.Right -> {
-                    val idx = GameConfig.columns.indexOf(st.chickenColumn)
-                    val nextIdx = (idx + 1).coerceAtMost(GameConfig.columns.lastIndex)
-                    st.copy(chickenColumn = GameConfig.columns[nextIdx])
-                }
-                SwipeDirection.Forward ->
-                    forward(st)
+            when (dir) {
+                SwipeDirection.Left -> moveSide(st, -1)
+                SwipeDirection.Right -> moveSide(st, +1)
+                SwipeDirection.Forward -> forward(st)
             }
         }
+    }
+
+    private fun moveSide(st: GameUiState, delta: Int): GameUiState {
+        val currentIdx = GameConfig.columns.indexOf(st.chickenColumn)
+        val newIdx = (currentIdx + delta).coerceIn(0, GameConfig.columns.lastIndex)
+        val newCol = GameConfig.columns[newIdx]
+
+        val laneIndex = st.segments.indexOfFirst { it.index == st.chickenLane }
+        val lane = st.segments.getOrNull(laneIndex)
+
+        val (afterPick, updatedLane) = pick(st.stats, lane, newCol)
+
+        val newSegments = st.segments.toMutableList()
+        if (laneIndex >= 0 && updatedLane != null) {
+            newSegments[laneIndex] = updatedLane
+        }
+
+        return st.copy(
+            chickenColumn = newCol,
+            stats = afterPick,
+            segments = newSegments
+        )
     }
 
     private fun forward(st: GameUiState): GameUiState {
@@ -111,22 +124,25 @@ class GameViewModel @Inject constructor(
     }
 
     private fun pick(stats: GameStats, lane: LaneSegment?, col: Int): Pair<GameStats, LaneSegment?> {
-        if (lane == null) return stats to null
+        val item = lane?.items?.firstOrNull { it.active && it.column == col }
+        if (item == null) return stats to null
 
-        val itemIndex = lane.items.indexOfFirst { it.active && it.column == col }
-        if (itemIndex == -1) return stats to null
+        val updatedLane = lane.copy(
+            items = lane.items.map {
+                if (it === item) it.copy(active = false) else it
+            }
+        )
 
-        val item = lane.items[itemIndex]
-        val updatedStats = when (item.type) {
+        val newStats = when (item.type) {
             ItemType.Egg -> stats.copy(eggs = stats.eggs + 1)
             ItemType.Magnet -> stats.copy(magnetActiveMs = 10000)
             ItemType.Helmet -> stats.copy(helmetActiveMs = 3000)
             ItemType.ExtraLife -> stats.copy(lives = (stats.lives + 1).coerceAtMost(GameConfig.maxLives))
         }
 
-        val newItems = lane.items.toMutableList().apply { removeAt(itemIndex) }
-        return updatedStats to lane.copy(items = newItems)
+        return newStats to updatedLane
     }
+
 
     private fun collide(stats: GameStats, lane: LaneSegment?, col: Int): Pair<GameStats, LaneSegment?> {
         if (lane == null || lane.type != LaneType.Railway) return stats to null
@@ -158,6 +174,19 @@ class GameViewModel @Inject constructor(
                         moved.segments.firstOrNull { it.index == moved.chickenLane },
                         moved.chickenColumn
                     )
+
+                    if (collidedStats.lives <= 0) {
+                        // reward once
+                        if (!reward) {
+                            reward = true
+                            viewModelScope.launch { repo.addEggs(collidedStats.eggs) }
+                        }
+
+                        return@update moved.copy(
+                            stats = collidedStats,
+                            status = GameStatus.GameOver
+                        )
+                    }
 
                     val updatedSegments = collidedLane?.let { lane ->
                         moved.segments.map { if (it.index == lane.index) lane else it }
@@ -214,17 +243,16 @@ class GameViewModel @Inject constructor(
         if (i == 0) return LaneSegment(i, LaneType.SafeZone, null, emptyList())
         if (i % 6 == 0) return LaneSegment(i, LaneType.SafeZone, null, emptyList())
 
-        val v = ex.takeLast(GameConfig.preloadLanesAhead + 5).count { it.trolley != null }
-        val t =
-            if (v < GameConfig.maxTrolleysOnScreen && Random.nextFloat() < GameConfig.trolleySpawnChance)
-                Trolley(
-                    position = Random.nextInt(-1, 2).toFloat(),
-                    direction = listOf(-1, 1).random(),
-                    speed = Random.nextFloat() *
-                            (GameConfig.trolleyMaxSpeed - GameConfig.trolleyMinSpeed) +
-                            GameConfig.trolleyMinSpeed
-                )
-            else null
+        val spawn = Random.nextFloat() < GameConfig.trolleySpawnChance
+        val t = if (spawn)
+            Trolley(
+                position = GameConfig.columns.random().toFloat(),
+                direction = listOf(-1, 1).random(),
+                speed = Random.nextFloat() *
+                        (GameConfig.trolleyMaxSpeed - GameConfig.trolleyMinSpeed) +
+                        GameConfig.trolleyMinSpeed
+            )
+        else null
 
         val item = loot()
         return LaneSegment(i, LaneType.Railway, t, listOfNotNull(item))

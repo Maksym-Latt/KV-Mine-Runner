@@ -1,4 +1,4 @@
-package com.chicken.minerunner.ui.sound
+package com.chicken.minerunner.sound
 
 import android.content.Context
 import android.media.MediaPlayer

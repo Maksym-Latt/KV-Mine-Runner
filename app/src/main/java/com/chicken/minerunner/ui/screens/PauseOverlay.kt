@@ -1,45 +1,130 @@
 package com.chicken.minerunner.ui.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.chicken.dropper.ui.components.ChickenButtonStyle
 import com.chicken.dropper.ui.components.PrimaryButton
+import com.chicken.dropper.ui.components.SecondaryButton
+import com.chicken.minerunner.ui.components.GradientOutlinedText
 import com.chicken.minerunner.ui.theme.OverlayBlue
 
 
 @Composable
- fun PauseOverlay(onResume: () -> Unit, onExit: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = OverlayBlue.copy(alpha = 0.6f)
+fun PauseOverlay(
+    onResume: () -> Unit,
+    onRestart: () -> Unit,
+    onExit: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.55f))
     ) {
-        Column(
+
+        // ---- BACK BUTTON (если хочешь — можешь убрать) ----
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(top = 24.dp, start = 24.dp)
         ) {
-            Text(
-                text = "Paused",
-                style = MaterialTheme.typography.titleLarge,
-                color = Color.White
+            SecondaryButton(
+                icon = rememberVectorPainter(Icons.Default.ArrowBackIosNew),
+                onClick = onResume
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            PrimaryButton(text = "Resume", onClick = onResume)
-            Spacer(modifier = Modifier.height(8.dp))
-            PrimaryButton(text = "Main menu", style = com.chicken.dropper.ui.components.ChickenButtonStyle.Blue, onClick = onExit)
+        }
+
+        // ---- MAIN CARD ----
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth(0.8f)
+                .wrapContentHeight()
+                .clip(RoundedCornerShape(20.dp))
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color(0xff286298),
+                            Color(0xff519ee4),
+                            Color(0xff296398)
+                        )
+                    )
+                )
+                .border(3.dp, Color(0xFF0A3C80), RoundedCornerShape(20.dp))
+                .padding(vertical = 30.dp, horizontal = 20.dp),
+            contentAlignment = Alignment.Center
+        ) {
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+
+                // ---- TITLE ----
+                GradientOutlinedText(
+                    text = "Paused",
+                    fontSize = 32.sp,
+                    outlineWidth = 5f,
+                    outlineColor = Color(0xFF0A3C80),
+                    fillWidth = false,
+                    gradient = Brush.horizontalGradient(
+                        listOf(
+                            Color.White,
+                            Color(0xFFEAF7FF),
+                            Color(0xFFD4ECFF)
+                        )
+                    )
+                )
+
+                // ---- RESUME ----
+                PrimaryButton(
+                    text = "Resume",
+                    onClick = onResume,
+                    style = ChickenButtonStyle.Blue,
+                    fontSize = 22.sp,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // ---- RESTART (новая кнопка) ----
+                PrimaryButton(
+                    text = "Restart",
+                    onClick = onRestart,
+                    style = ChickenButtonStyle.Blue,
+                    fontSize = 22.sp,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // ---- MAIN MENU ----
+                PrimaryButton(
+                    text = "Main menu",
+                    onClick = onExit,
+                    style = ChickenButtonStyle.Blue,
+                    fontSize = 22.sp,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }

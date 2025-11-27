@@ -1,10 +1,9 @@
 package com.chicken.minerunner.ui.screens
 
-import android.R.attr.y
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -17,12 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -34,11 +30,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.imageResource
@@ -48,7 +47,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.chicken.dropper.ui.components.PrimaryButton
 import com.chicken.dropper.ui.components.SecondaryButton
 import com.chicken.minerunner.R
 import com.chicken.minerunner.domain.config.GameConfig
@@ -58,10 +56,8 @@ import com.chicken.minerunner.domain.model.ItemType
 import com.chicken.minerunner.domain.model.LaneType
 import com.chicken.minerunner.domain.model.SwipeDirection
 import com.chicken.minerunner.ui.components.EggCounter
-import com.chicken.minerunner.ui.sound.SoundManager
+import com.chicken.minerunner.sound.SoundManager
 import com.chicken.minerunner.ui.theme.CopperDark
-import com.chicken.minerunner.ui.theme.OverlayBlue
-import kotlin.math.abs
 
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
@@ -125,20 +121,58 @@ fun GameScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(CopperDark)
-                .pointerInput(state.status) {
-                    detectDragGestures { change, drag ->
-                        change.consume()
-                        val (dx, dy) = drag
-                        val ax = abs(dx)
-                        val ay = abs(dy)
-                        if (ax > ay && ax > 50) {
-                            if (dx > 0) onSwipe(SwipeDirection.Right)
-                            else onSwipe(SwipeDirection.Left)
-                        } else if (ay > 50 && dy < 0) {
-                            onSwipe(SwipeDirection.Forward)
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val down = awaitFirstDown()
+
+                            val startX = down.position.x
+                            val startY = down.position.y
+
+                            var endX = startX
+                            var endY = startY
+
+                            var pointer = down.id
+
+                            // ждём движения или отпускания
+                            while (true) {
+                                val event = awaitPointerEvent()
+
+                                val change = event.changes.firstOrNull { it.id == pointer }
+                                if (change == null) break
+
+                                if (change.positionChanged()) {
+                                    endX = change.position.x
+                                    endY = change.position.y
+                                }
+
+                                if (change.changedToUp()) {
+                                    break
+                                }
+                            }
+
+                            val dx = endX - startX
+                            val dy = endY - startY
+
+                            val ax = kotlin.math.abs(dx)
+                            val ay = kotlin.math.abs(dy)
+
+                            val threshold = 50f
+
+                            if (ax < threshold && ay < threshold) {
+                                continue
+                            }
+
+                            if (ax > ay) {
+                                if (dx > 0) onSwipe(SwipeDirection.Right)
+                                else onSwipe(SwipeDirection.Left)
+                            } else {
+                                if (dy < 0) onSwipe(SwipeDirection.Forward)
+                            }
                         }
                     }
                 }
+
         ) {
             val density = LocalDensity.current
             val w = constraints.maxWidth.toFloat()
@@ -261,7 +295,7 @@ fun GameScreen(
         )
 
         if (state.status is GameStatus.Paused) {
-            PauseOverlay(onResume = onResume, onExit = onExit)
+            PauseOverlay(onResume = onResume, onRestart = onExit, onExit = onExit)
         }
     }
 }
@@ -276,44 +310,51 @@ private fun TopPanel(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         SecondaryButton(
-            icon = rememberVectorPainter(Icons.Default.Home),
-            onClick = onExit
+            icon = rememberVectorPainter(Icons.Default.Pause),
+            onClick = onPause
         )
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = "Distance ${state.stats.distance}m",
-                color = Color.White,
-                fontSize = 16.sp
-            )
-            EggCounter(
-                count = state.stats.eggs,
-                eggIcon = R.drawable.item_egg,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.wrapContentWidth()
         ) {
-            repeat(state.stats.lives) {
-                Image(
-                    painter = painterResource(id = R.drawable.item_extra_life),
-                    contentDescription = null,
-                    modifier = Modifier.size(32.dp)
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                EggCounter(
+                    count = state.stats.eggs,
+                    eggIcon = R.drawable.item_egg
                 )
             }
 
-            SecondaryButton(
-                icon = rememberVectorPainter(Icons.Default.Person),
-                onClick = onPause
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Distance: ${state.stats.distance}m",
+                color = Color.White,
+                fontSize = 14.sp,
+                modifier = Modifier.shadow(4.dp)
             )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                repeat(state.stats.lives) {
+                    Image(
+                        painter = painterResource(id = R.drawable.item_extra_life),
+                        contentDescription = null,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
         }
     }
 }
