@@ -30,7 +30,9 @@ data class GameStats(
     val eggs: Int = 0,
     val lives: Int = 3,
     val magnetActiveMs: Long = 0L,
-    val helmetActiveMs: Long = 0L
+    val magnetDurationMs: Long = 0L,
+    val helmetActiveMs: Long = 0L,
+    val helmetDurationMs: Long = 0L
 )
 
 sealed class GameStatus {

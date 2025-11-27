@@ -16,9 +16,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -31,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
@@ -346,6 +350,23 @@ private fun TopPanel(
 
             Spacer(modifier = Modifier.height(4.dp))
 
+            AbilityTimerBar(
+                label = "Magnet",
+                remainingMs = state.stats.magnetActiveMs,
+                totalMs = state.stats.magnetDurationMs,
+                color = Color(0xFF5AA2FF)
+            )
+
+            AbilityTimerBar(
+                label = "Helmet",
+                remainingMs = state.stats.helmetActiveMs,
+                totalMs = state.stats.helmetDurationMs,
+                color = Color(0xFFFFC857),
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 repeat(state.stats.lives) {
                     Image(
@@ -356,5 +377,36 @@ private fun TopPanel(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AbilityTimerBar(
+    label: String,
+    remainingMs: Long,
+    totalMs: Long,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    if (remainingMs <= 0 || totalMs <= 0) return
+    val progress = (remainingMs.toFloat() / totalMs).coerceIn(0f, 1f)
+    val secondsLeft = remainingMs / 1000f
+
+    Column(modifier = modifier) {
+        Text(
+            text = "$label: ${"%.1f".format(secondsLeft)}s",
+            color = Color.White,
+            fontSize = 12.sp
+        )
+        LinearProgressIndicator(
+            progress = progress,
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .width(140.dp)
+                .height(10.dp)
+                .clip(RoundedCornerShape(12.dp)),
+            color = color,
+            trackColor = Color.White.copy(alpha = 0.25f)
+        )
     }
 }
