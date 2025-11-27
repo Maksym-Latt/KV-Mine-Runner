@@ -157,6 +157,8 @@ fun GameScreen(
             GameConfig.railwayHeightPx = railH
 
             var acc = 0f
+            val laneHeights = mutableMapOf<Int, Pair<Float, Float>>()
+            val laneWidth = w / GameConfig.trackCount
 
             state.segments.forEach { seg ->
                 val lh = if (seg.type == LaneType.SafeZone) safeH else railH
@@ -164,6 +166,8 @@ fun GameScreen(
                 val y = h - acc - lh + state.cameraOffset
                 acc += lh
                 if (y < -lh || y > h) return@forEach
+
+                laneHeights[seg.index] = y to lh
 
                 val p: Painter =
                     if (seg.type == LaneType.SafeZone) painterResource(R.drawable.save_zone)
@@ -179,9 +183,7 @@ fun GameScreen(
                     contentScale = ContentScale.FillBounds
                 )
 
-                val laneWidth = w / GameConfig.trackCount
-
-                seg.items.forEach {
+                seg.items.filter { it.active }.forEach {
                     val ip = when (it.type) {
                         ItemType.Egg -> painterResource(R.drawable.item_egg)
                         ItemType.Magnet -> painterResource(R.drawable.item_magnet)
@@ -225,12 +227,10 @@ fun GameScreen(
                 }
             }
 
-            val laneWidth = w / GameConfig.trackCount
-
             val lane = state.segments.firstOrNull { it.index == state.chickenLane }
-            if (lane != null) {
-                val lh = if (lane.type == LaneType.SafeZone) safeH else railH
-                val laneY = h - lh * (lane.index + 1) + state.cameraOffset
+            val lanePosition = laneHeights[state.chickenLane]
+            if (lane != null && lanePosition != null) {
+                val (laneY, lh) = lanePosition
                 val cy = laneY + lh / 2
 
                 val laneIndex = GameConfig.columns.indexOf(state.chickenColumn)
