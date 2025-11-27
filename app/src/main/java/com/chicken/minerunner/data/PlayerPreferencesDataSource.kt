@@ -31,7 +31,7 @@ class PlayerPreferencesDataSource @Inject constructor(
         val musicEnabled = booleanPreferencesKey("music_enabled")
         val sfxEnabled = booleanPreferencesKey("sfx_enabled")
 
-        fun itemLevel(id: String): Preferences.Key<Int> = intPreferencesKey("item_${'$'}id_level")
+        fun itemLevel(id: String): Preferences.Key<Int> = intPreferencesKey("item_${id}_level")
     }
 
     data class PreferencesState(
