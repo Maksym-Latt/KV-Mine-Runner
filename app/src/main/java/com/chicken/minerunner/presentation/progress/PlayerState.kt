@@ -4,13 +4,13 @@ data class ShopItemState(
     val id: String,
     val title: String,
     val subtitle: String,
-    val basePrice: Int,
     val image: Int,
-    val level: Int = 1,
-    val maxLevel: Int = 3,
+    val level: Int = 0,
+    val upgradePrices: List<Int> = emptyList(),
     val dynamicSubtitle: String = subtitle
 ) {
-    val nextPrice: Int? get() = if (level >= maxLevel) null else basePrice * (level + 1)
+    val maxLevel: Int get() = upgradePrices.size
+    val nextPrice: Int? get() = upgradePrices.getOrNull(level)
 }
 
 data class PlayerState(

@@ -51,7 +51,7 @@ class PlayerPreferencesDataSource @Inject constructor(
         val itemLevels = mutableMapOf<String, Int>()
         baseItemIds.forEach { id ->
             val key = Keys.itemLevel(id)
-            val level = prefs[key] ?: 1
+            val level = prefs[key] ?: 0
             itemLevels[id] = level
         }
 

@@ -15,28 +15,35 @@ class PlayerRepositoryImpl @Inject constructor(
     private val preferencesDataSource: PlayerPreferencesDataSource
 ) : PlayerRepository {
 
+    private data class ShopItemDefinition(
+        val id: String,
+        val title: String,
+        val subtitle: String,
+        val image: Int,
+        val upgradePrices: List<Int>
+    )
+
     private val baseItems = listOf(
-        ShopItemState(
+        ShopItemDefinition(
             id = "magnet",
             title = "MAGNET",
             subtitle = "Magnet up to 10 seconds",
-            basePrice = 1499,
-            image = com.chicken.minerunner.R.drawable.item_magnet
+            image = com.chicken.minerunner.R.drawable.item_magnet,
+            upgradePrices = listOf(1499, 2998, 4497)
         ),
-        ShopItemState(
+        ShopItemDefinition(
             id = "helmet",
             title = "HELMET",
             subtitle = "Invulnerability up to 10 seconds",
-            basePrice = 5499,
-            image = com.chicken.minerunner.R.drawable.item_helmet
+            image = com.chicken.minerunner.R.drawable.item_helmet,
+            upgradePrices = listOf(5499, 10998, 16497)
         ),
-        ShopItemState(
+        ShopItemDefinition(
             id = "extra_life",
             title = "EXTRA LIFE",
             subtitle = "Increase extra life spawn",
-            basePrice = 8499,
             image = com.chicken.minerunner.R.drawable.item_extra_life,
-            maxLevel = 3
+            upgradePrices = listOf(8499, 16998, 25497)
         )
     )
 
@@ -69,8 +76,13 @@ class PlayerRepositoryImpl @Inject constructor(
 
         val items = baseItems.map { base ->
             val level = prefs.itemLevels[base.id] ?: 0
-            base.copy(
+            ShopItemState(
+                id = base.id,
+                title = base.title,
+                subtitle = base.subtitle,
+                image = base.image,
                 level = level,
+                upgradePrices = base.upgradePrices,
                 dynamicSubtitle = buildDynamicSubtitle(base.id, level)
             )
         }
