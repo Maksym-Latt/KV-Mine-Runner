@@ -11,6 +11,7 @@ import com.chicken.minerunner.domain.model.LaneSegment
 import com.chicken.minerunner.domain.model.LaneType
 import com.chicken.minerunner.domain.model.SwipeDirection
 import com.chicken.minerunner.domain.model.Trolley
+import com.chicken.minerunner.domain.repository.PlayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -22,15 +23,19 @@ import kotlin.math.abs
 import kotlin.random.Random
 
 @HiltViewModel
-class GameViewModel @javax.inject.Inject constructor() : ViewModel() {
+class GameViewModel @javax.inject.Inject constructor(
+    private val playerRepository: PlayerRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(createInitialState())
     val uiState = _uiState.asStateFlow()
 
     private var tickerJob: Job? = null
+    private var runRewardDelivered: Boolean = false
 
     fun startGame() {
         _uiState.value = createInitialState().copy(status = GameStatus.Running)
+        runRewardDelivered = false
         startTicker()
     }
 
@@ -65,6 +70,12 @@ class GameViewModel @javax.inject.Inject constructor() : ViewModel() {
         val statsAfterCollision = lane?.let { checkCollision(updatedStats, it, current.chickenColumn) } ?: updatedStats
 
         val newStatus = if (statsAfterCollision.lives <= 0) GameStatus.GameOver else current.status
+        if (newStatus is GameStatus.GameOver && !runRewardDelivered) {
+            runRewardDelivered = true
+            viewModelScope.launch {
+                playerRepository.addEggs(statsAfterCollision.eggs)
+            }
+        }
         return current.copy(
             chickenLane = nextLane,
             segments = segments,
