@@ -2,33 +2,33 @@ package com.chicken.minerunner.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.chicken.minerunner.R
 
-// Set of Material typography styles to start with
+val MineFont = FontFamily(Font(R.font.mochiy_pop_one_regular))
+
 val Typography = Typography(
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
-    )
-    /* Other default text styles to override
-    titleLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp
+    displayLarge = TextStyle(
+        fontFamily = MineFont,
+        fontWeight = FontWeight.Bold,
+        fontSize = 38.sp
     ),
-    labelSmall = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp
+    headlineMedium = TextStyle(
+        fontFamily = MineFont,
+        fontWeight = FontWeight.Bold,
+        fontSize = 24.sp
+    ),
+    bodyLarge = TextStyle(
+        fontFamily = MineFont,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp
+    ),
+    labelLarge = TextStyle(
+        fontFamily = MineFont,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 16.sp
     )
-    */
 )
