@@ -31,10 +31,8 @@ class GameViewModel @Inject constructor(
 
     fun reset() {
         val initialRows = buildList {
-            add(generateTrackRowUseCase.invoke(0, isSafeZone = true))
-            add(generateTrackRowUseCase.invoke(1, isSafeZone = true))
-            for (i in 2..8) {
-                add(generateTrackRowUseCase.invoke(i, isSafeZone = false))
+            for (i in 0..8) {
+                add(generateTrackRowUseCase.invoke(i, isSafeZone = isSafeRow(i)))
             }
         }
         _uiState.value = GameSnapshot(rows = initialRows)
@@ -112,11 +110,13 @@ class GameViewModel @Inject constructor(
         val currentRows = _uiState.value.rows.toMutableList()
         if (index >= currentRows.lastIndex - 2) {
             val nextId = currentRows.maxOf { it.id } + 1
-            val isSafe = nextId % 7 == 0 || (nextId - 1) % 7 == 0
+            val isSafe = isSafeRow(nextId)
             currentRows.add(generateTrackRowUseCase.invoke(nextId, isSafe))
         }
         _uiState.value = _uiState.value.copy(rows = currentRows)
     }
+
+    private fun isSafeRow(id: Int): Boolean = id < 2 || id % 4 == 0
 
     private fun persistProgress(snapshot: GameSnapshot) {
         viewModelScope.launch {

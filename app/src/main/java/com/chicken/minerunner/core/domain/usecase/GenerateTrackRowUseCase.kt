@@ -10,22 +10,43 @@ import kotlin.random.Random
 class GenerateTrackRowUseCase {
     fun invoke(id: Int, isSafeZone: Boolean): TrackRow {
         val type = if (isSafeZone) TrackType.SAFE_ZONE else TrackType.RAILWAY
+        val trolleyPattern = when (id % 4) {
+            0 -> setOf(LanePosition.LEFT)
+            1 -> setOf(LanePosition.CENTER)
+            2 -> setOf(LanePosition.RIGHT)
+            else -> setOf(LanePosition.LEFT, LanePosition.RIGHT)
+        }
+
         val lanes = LanePosition.values().map { lane ->
-            if (type == TrackType.SAFE_ZONE) {
-                LaneContent(lane = lane, hasTrolley = false, item = null)
-            } else {
-                val roll = Random.nextInt(100)
-                val item = when {
-                    roll < 2 -> ItemType.EXTRA_LIFE
-                    roll < 6 -> ItemType.MAGNET
-                    roll < 10 -> ItemType.HELMET
-                    roll < 100 -> ItemType.EGG
-                    else -> null
-                }
-                val trolley = Random.nextBoolean()
-                LaneContent(lane = lane, hasTrolley = trolley, item = item)
+            val hasTrolley = type == TrackType.RAILWAY && lane in trolleyPattern
+            val item = when {
+                hasTrolley -> null
+                isSafeZone -> pickItem(rareBonuses = true)
+                else -> pickItem(rareBonuses = false)
             }
+            LaneContent(lane = lane, hasTrolley = hasTrolley, item = item)
         }
         return TrackRow(id = id, type = type, lanes = lanes)
+    }
+
+    private fun pickItem(rareBonuses: Boolean): ItemType? {
+        val roll = Random.nextInt(100)
+        return if (rareBonuses) {
+            when {
+                roll < 10 -> ItemType.EXTRA_LIFE
+                roll < 25 -> ItemType.HELMET
+                roll < 40 -> ItemType.MAGNET
+                roll < 80 -> ItemType.EGG
+                else -> null
+            }
+        } else {
+            when {
+                roll < 3 -> ItemType.EXTRA_LIFE
+                roll < 8 -> ItemType.HELMET
+                roll < 14 -> ItemType.MAGNET
+                roll < 90 -> ItemType.EGG
+                else -> null
+            }
+        }
     }
 }
