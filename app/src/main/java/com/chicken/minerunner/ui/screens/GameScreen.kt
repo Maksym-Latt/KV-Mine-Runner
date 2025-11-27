@@ -3,19 +3,22 @@ package com.chicken.minerunner.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -33,20 +37,21 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.chicken.dropper.ui.components.PrimaryButton
+import com.chicken.dropper.ui.components.SecondaryButton
 import com.chicken.minerunner.R
+import com.chicken.minerunner.domain.config.GameConfig
 import com.chicken.minerunner.domain.model.GameStatus
 import com.chicken.minerunner.domain.model.GameUiState
 import com.chicken.minerunner.domain.model.ItemType
 import com.chicken.minerunner.domain.model.LaneType
 import com.chicken.minerunner.domain.model.SwipeDirection
-import com.chicken.minerunner.ui.components.MineButton
+import com.chicken.minerunner.ui.components.EggCounter
 import com.chicken.minerunner.ui.theme.CopperDark
-import com.chicken.minerunner.ui.theme.Gold
 import com.chicken.minerunner.ui.theme.OverlayBlue
-import com.chicken.minerunner.ui.theme.SoftBrown
 import kotlin.math.abs
 
-private val laneHeightDp = 180.dp
+private val laneHeightDp = GameConfig.laneHeight.dp
 
 @Composable
 fun GameScreen(
@@ -138,7 +143,9 @@ fun GameScreen(
                 }
 
                 segment.trolley?.let { trolley ->
-                    val x = centerX + trolley.position * (columnWidth / 1.2f)
+                    val trackHalfWidth = widthPx / 2f - 70f
+                    val trolleyFraction = trolley.position / GameConfig.trolleyBounds
+                    val x = centerX + trolleyFraction * trackHalfWidth
                     Image(
                         painter = painterResource(id = R.drawable.trolley),
                         contentDescription = null,
@@ -147,7 +154,7 @@ fun GameScreen(
                             .align(Alignment.TopStart)
                             .offset(
                                 x = with(density) { (x - 55f).toDp() },
-                                y = with(density) { (y - laneHeightPx / 3).toDp() }
+                                y = with(density) { (y - laneHeightPx / 2.4f).toDp() }
                             )
                     )
                 }
@@ -161,15 +168,15 @@ fun GameScreen(
                 contentDescription = null,
                 modifier = Modifier
                     .size(120.dp)
-                    .align(Alignment.BottomCenter)
+                    .align(Alignment.Center)
                     .offset(
                         x = with(density) { (chickenX - 60f).toDp() },
-                        y = with(density) { (-20f).toDp() }
+                        y = 12.dp
                     )
             )
         }
 
-        TopPanel(state)
+        TopPanel(state, onPause, onExit)
 
         if (state.status is GameStatus.Paused) {
             PauseOverlay(onResume = onResume, onExit = onExit)
@@ -178,7 +185,7 @@ fun GameScreen(
 }
 
 @Composable
-private fun TopPanel(state: GameUiState) {
+private fun TopPanel(state: GameUiState, onPause: () -> Unit, onExit: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -190,11 +197,19 @@ private fun TopPanel(state: GameUiState) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column {
+            SecondaryButton(
+                icon = rememberVectorPainter(image = Icons.Default.Home),
+                onClick = onExit
+            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = "Distance ${state.stats.distance}m", color = Color.White, fontSize = 16.sp)
-                Text(text = "Eggs ${state.stats.eggs}", color = Gold, fontSize = 14.sp)
+                EggCounter(
+                    count = state.stats.eggs,
+                    eggIcon = R.drawable.item_egg,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 repeat(state.stats.lives) {
                     Image(
                         painter = painterResource(id = R.drawable.item_extra_life),
@@ -202,7 +217,11 @@ private fun TopPanel(state: GameUiState) {
                         modifier = Modifier.size(32.dp)
                     )
                 }
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                SecondaryButton(
+                    icon = rememberVectorPainter(image = Icons.Default.Pause),
+                    onClick = onPause
+                )
             }
         }
     }
@@ -227,9 +246,9 @@ private fun PauseOverlay(onResume: () -> Unit, onExit: () -> Unit) {
                 color = Color.White
             )
             Spacer(modifier = Modifier.height(12.dp))
-            MineButton(text = "Resume", onClick = onResume)
+            PrimaryButton(text = "Resume", onClick = onResume)
             Spacer(modifier = Modifier.height(8.dp))
-            MineButton(text = "Main menu", colors = listOf(Color.White, Gold), onClick = onExit)
+            PrimaryButton(text = "Main menu", style = com.chicken.dropper.ui.components.ChickenButtonStyle.Blue, onClick = onExit)
         }
     }
 }
