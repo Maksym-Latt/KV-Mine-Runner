@@ -76,48 +76,71 @@ class GameViewModel @Inject constructor(
 
     private fun forward(st: GameUiState): GameUiState {
         val next = st.chickenLane + 1
-        val segs = fill(st.segments, next)
-        val lane = segs.firstOrNull { it.index == next }
-        val s1 = pick(st.stats, lane, st.chickenColumn)
-        val s2 = lane?.let { collide(s1, it, st.chickenColumn) } ?: s1
+        val segs = fill(st.segments, next).toMutableList()
+        val laneIndex = segs.indexOfFirst { it.index == next }
+
+        val (afterPickStats, updatedLaneAfterPick) = pick(st.stats, segs.getOrNull(laneIndex), st.chickenColumn)
+        if (laneIndex >= 0) {
+            updatedLaneAfterPick?.let { segs[laneIndex] = it }
+        }
+
+        val (afterCollisionStats, updatedLaneAfterCollision) = collide(
+            afterPickStats,
+            segs.getOrNull(laneIndex),
+            st.chickenColumn
+        )
+        if (laneIndex >= 0) {
+            updatedLaneAfterCollision?.let { segs[laneIndex] = it }
+        }
         val status =
-            if (s2.lives <= 0) GameStatus.GameOver else st.status
+            if (afterCollisionStats.lives <= 0) GameStatus.GameOver else st.status
 
         if (status is GameStatus.GameOver && !reward) {
             reward = true
             viewModelScope.launch {
-                repo.addEggs(s2.eggs)
+                repo.addEggs(afterCollisionStats.eggs)
             }
         }
 
         return st.copy(
             chickenLane = next,
             segments = segs,
-            stats = s2.copy(distance = next),
+            stats = afterCollisionStats.copy(distance = next),
             status = status
         )
     }
 
-    private fun pick(stats: GameStats, lane: LaneSegment?, col: Int): GameStats {
-        val item = lane?.items?.firstOrNull { it.active && it.column == col }
-        return when (item?.type) {
+    private fun pick(stats: GameStats, lane: LaneSegment?, col: Int): Pair<GameStats, LaneSegment?> {
+        if (lane == null) return stats to null
+
+        val itemIndex = lane.items.indexOfFirst { it.active && it.column == col }
+        if (itemIndex == -1) return stats to null
+
+        val item = lane.items[itemIndex]
+        val updatedStats = when (item.type) {
             ItemType.Egg -> stats.copy(eggs = stats.eggs + 1)
             ItemType.Magnet -> stats.copy(magnetActiveMs = 10000)
             ItemType.Helmet -> stats.copy(helmetActiveMs = 3000)
             ItemType.ExtraLife -> stats.copy(lives = (stats.lives + 1).coerceAtMost(GameConfig.maxLives))
-            else -> stats
         }
+
+        val newItems = lane.items.toMutableList().apply { removeAt(itemIndex) }
+        return updatedStats to lane.copy(items = newItems)
     }
 
-    private fun collide(stats: GameStats, lane: LaneSegment, col: Int): GameStats {
-        if (lane.type != LaneType.Railway) return stats
-        val tr = lane.trolley ?: return stats
+    private fun collide(stats: GameStats, lane: LaneSegment?, col: Int): Pair<GameStats, LaneSegment?> {
+        if (lane == null || lane.type != LaneType.Railway) return stats to null
+        val tr = lane.trolley ?: return stats to null
         val dx = abs(col - tr.position)
-        val t = 0.8f
-        return if (dx < t) {
-            if (stats.helmetActiveMs > 0) stats.copy(helmetActiveMs = 0)
-            else stats.copy(lives = stats.lives - 1)
-        } else stats
+        val t = GameConfig.trolleyCollisionThreshold
+        val collided = dx < t
+
+        if (!collided) return stats to null
+
+        val updatedStats = if (stats.helmetActiveMs > 0) stats.copy(helmetActiveMs = 0)
+        else stats.copy(lives = stats.lives - 1)
+
+        return updatedStats to lane.copy(trolley = null)
     }
 
     private fun tick() {
@@ -129,11 +152,22 @@ class GameViewModel @Inject constructor(
                     if (st.status != GameStatus.Running)
                         return@update st.copy(cameraOffset = cam(st))
 
-                    val a = move(st)
-                    val b = timers(a.stats)
-                    a.copy(
-                        stats = b,
-                        cameraOffset = cam(a)
+                    val moved = move(st)
+                    val (collidedStats, collidedLane) = collide(
+                        moved.stats,
+                        moved.segments.firstOrNull { it.index == moved.chickenLane },
+                        moved.chickenColumn
+                    )
+
+                    val updatedSegments = collidedLane?.let { lane ->
+                        moved.segments.map { if (it.index == lane.index) lane else it }
+                    } ?: moved.segments
+
+                    val timedStats = timers(collidedStats)
+                    moved.copy(
+                        segments = updatedSegments,
+                        stats = timedStats,
+                        cameraOffset = cam(moved)
                     )
                 }
             }
