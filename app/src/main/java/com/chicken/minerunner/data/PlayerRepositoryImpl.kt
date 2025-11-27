@@ -19,24 +19,24 @@ class PlayerRepositoryImpl @Inject constructor(
         ShopItemState(
             id = "magnet",
             title = "MAGNET",
-            subtitle = "magnet for 10 seconds",
+            subtitle = "Magnet up to 10 seconds",
             basePrice = 1499,
             image = com.chicken.minerunner.R.drawable.item_magnet
         ),
         ShopItemState(
             id = "helmet",
             title = "HELMET",
-            subtitle = "invulnerability 3 seconds",
+            subtitle = "Invulnerability up to 10 seconds",
             basePrice = 5499,
             image = com.chicken.minerunner.R.drawable.item_helmet
         ),
         ShopItemState(
             id = "extra_life",
             title = "EXTRA LIFE",
-            subtitle = "add additional extra life",
+            subtitle = "Increase extra life spawn",
             basePrice = 8499,
             image = com.chicken.minerunner.R.drawable.item_extra_life,
-            maxLevel = 5
+            maxLevel = 3
         )
     )
 

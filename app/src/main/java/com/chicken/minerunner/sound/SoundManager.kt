@@ -12,6 +12,8 @@ class SoundManager(private val context: Context) {
 
     private var menuPlayer: MediaPlayer? = null
     private var gamePlayer: MediaPlayer? = null
+    private var menuWasPaused = false
+    private var gameWasPaused = false
 
     fun playMenuMusic(enabled: Boolean) {
         if (!enabled) {
@@ -26,6 +28,7 @@ class SoundManager(private val context: Context) {
         if (menuPlayer?.isPlaying != true) {
             menuPlayer?.start()
         }
+        menuWasPaused = false
         stopGameMusic()
     }
 
@@ -42,12 +45,39 @@ class SoundManager(private val context: Context) {
         if (gamePlayer?.isPlaying != true) {
             gamePlayer?.start()
         }
+        gameWasPaused = false
         stopMenuMusic()
     }
 
     fun stopAll() {
         stopMenuMusic()
         stopGameMusic()
+    }
+
+    fun pauseAll() {
+        menuPlayer?.let {
+            if (it.isPlaying) {
+                it.pause()
+                menuWasPaused = true
+            }
+        }
+        gamePlayer?.let {
+            if (it.isPlaying) {
+                it.pause()
+                gameWasPaused = true
+            }
+        }
+    }
+
+    fun resumePaused() {
+        if (menuWasPaused) {
+            menuPlayer?.start()
+        }
+        if (gameWasPaused) {
+            gamePlayer?.start()
+        }
+        menuWasPaused = false
+        gameWasPaused = false
     }
 
     fun playSfx(@RawRes resId: Int, enabled: Boolean) {

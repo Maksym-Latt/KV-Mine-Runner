@@ -34,6 +34,36 @@ class GameViewModel @Inject constructor(
 
     private var ticker: Job? = null
     private var reward = false
+    private var itemLevels: Map<String, Int> = emptyMap()
+
+    init {
+        viewModelScope.launch {
+            repo.state.collect { state ->
+                itemLevels = state.shopItems.associate { it.id to it.level }
+            }
+        }
+    }
+
+    private fun magnetDurationMs(): Long = when (itemLevels["magnet"] ?: 0) {
+        1 -> 5_000L
+        2 -> 7_000L
+        3 -> 10_000L
+        else -> 0L
+    }
+
+    private fun helmetDurationMs(): Long = when (itemLevels["helmet"] ?: 0) {
+        1 -> 5_000L
+        2 -> 7_000L
+        3 -> 10_000L
+        else -> 0L
+    }
+
+    private fun extraLifeSpawnChance(): Int = when (itemLevels["extra_life"] ?: 0) {
+        1 -> 1
+        2 -> 2
+        3 -> 3
+        else -> 0
+    }
 
     fun start() {
         _ui.value = startState().copy(status = GameStatus.Running)
@@ -124,23 +154,42 @@ class GameViewModel @Inject constructor(
     }
 
     private fun pick(stats: GameStats, lane: LaneSegment?, col: Int): Pair<GameStats, LaneSegment?> {
-        val item = lane?.items?.firstOrNull { it.active && it.column == col }
-        if (item == null) return stats to null
+        if (lane == null) return stats to null
 
-        val updatedLane = lane.copy(
-            items = lane.items.map {
-                if (it === item) it.copy(active = false) else it
+        var updatedStats = stats
+        var updated = false
+
+        val updatedItems = lane.items.map { item ->
+            val collectEggWithMagnet = item.type == ItemType.Egg && updatedStats.magnetActiveMs > 0
+            val shouldCollect = item.active && (item.column == col || collectEggWithMagnet)
+
+            if (shouldCollect) {
+                updated = true
+                updatedStats = applyItemEffect(updatedStats, item)
+                item.copy(active = false)
+            } else {
+                item
             }
-        )
-
-        val newStats = when (item.type) {
-            ItemType.Egg -> stats.copy(eggs = stats.eggs + 1)
-            ItemType.Magnet -> stats.copy(magnetActiveMs = 10000)
-            ItemType.Helmet -> stats.copy(helmetActiveMs = 3000)
-            ItemType.ExtraLife -> stats.copy(lives = (stats.lives + 1).coerceAtMost(GameConfig.maxLives))
         }
 
-        return newStats to updatedLane
+        return if (updated) updatedStats to lane.copy(items = updatedItems) else stats to null
+    }
+
+    private fun applyItemEffect(stats: GameStats, item: GameItem): GameStats {
+        return when (item.type) {
+            ItemType.Egg -> stats.copy(eggs = stats.eggs + 1)
+            ItemType.Magnet -> {
+                val duration = magnetDurationMs()
+                if (duration > 0) stats.copy(magnetActiveMs = duration, magnetDurationMs = duration) else stats
+            }
+
+            ItemType.Helmet -> {
+                val duration = helmetDurationMs()
+                if (duration > 0) stats.copy(helmetActiveMs = duration, helmetDurationMs = duration) else stats
+            }
+
+            ItemType.ExtraLife -> stats.copy(lives = (stats.lives + 1).coerceAtMost(GameConfig.maxLives))
+        }
     }
 
 
@@ -153,7 +202,7 @@ class GameViewModel @Inject constructor(
 
         if (!collided) return stats to null
 
-        val updatedStats = if (stats.helmetActiveMs > 0) stats.copy(helmetActiveMs = 0)
+        val updatedStats = if (stats.helmetActiveMs > 0) stats.copy(helmetActiveMs = 0, helmetDurationMs = 0)
         else stats.copy(lives = stats.lives - 1)
 
         return updatedStats to lane.copy(trolley = null)
@@ -169,9 +218,13 @@ class GameViewModel @Inject constructor(
                         return@update st.copy(cameraOffset = cam(st))
 
                     val moved = move(st)
+                    val currentLane = moved.segments.firstOrNull { it.index == moved.chickenLane }
+                    val (pickedStats, pickedLane) = pick(moved.stats, currentLane, moved.chickenColumn)
+                    val laneAfterPick = pickedLane ?: currentLane
+
                     val (collidedStats, collidedLane) = collide(
-                        moved.stats,
-                        moved.segments.firstOrNull { it.index == moved.chickenLane },
+                        pickedStats,
+                        laneAfterPick,
                         moved.chickenColumn
                     )
 
@@ -188,7 +241,8 @@ class GameViewModel @Inject constructor(
                         )
                     }
 
-                    val updatedSegments = collidedLane?.let { lane ->
+                    val finalLane = collidedLane ?: laneAfterPick
+                    val updatedSegments = finalLane?.let { lane ->
                         moved.segments.map { if (it.index == lane.index) lane else it }
                     } ?: moved.segments
 
@@ -205,9 +259,13 @@ class GameViewModel @Inject constructor(
 
     private fun timers(s: GameStats): GameStats {
         fun Long.drop() = (this - GameConfig.frameMs).coerceAtLeast(0)
+        val magnetLeft = s.magnetActiveMs.drop()
+        val helmetLeft = s.helmetActiveMs.drop()
         return s.copy(
-            magnetActiveMs = s.magnetActiveMs.drop(),
-            helmetActiveMs = s.helmetActiveMs.drop()
+            magnetActiveMs = magnetLeft,
+            helmetActiveMs = helmetLeft,
+            magnetDurationMs = if (magnetLeft == 0L) 0 else s.magnetDurationMs,
+            helmetDurationMs = if (helmetLeft == 0L) 0 else s.helmetDurationMs
         )
     }
 
@@ -261,11 +319,12 @@ class GameViewModel @Inject constructor(
     private fun loot(): GameItem? {
         val r = Random.nextInt(0, 100)
         val c = GameConfig.columns.random()
+        val extraLifeChance = extraLifeSpawnChance()
         return when {
             r < 90 -> GameItem(c, ItemType.Egg)
             r < 94 -> GameItem(c, ItemType.Helmet)
             r < 98 -> GameItem(c, ItemType.Magnet)
-            r < 100 -> GameItem(c, ItemType.ExtraLife)
+            r < 98 + extraLifeChance -> GameItem(c, ItemType.ExtraLife)
             else -> null
         }
     }

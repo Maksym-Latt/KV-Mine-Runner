@@ -1,10 +1,14 @@
 package com.chicken.minerunner.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.NavType
@@ -49,6 +53,23 @@ fun AppRootNavigation() {
 
     val progressState by progressViewModel.uiState.collectAsStateWithLifecycle()
     val soundManager = rememberSoundManager()
+
+    DisposableEffect(soundManager) {
+        val lifecycle = ProcessLifecycleOwner.get().lifecycle
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_STOP -> soundManager.pauseAll()
+                Lifecycle.Event.ON_START -> soundManager.resumePaused()
+                else -> Unit
+            }
+        }
+
+        lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycle.removeObserver(observer)
+        }
+    }
 
     NavHost(
         navController = navController,
