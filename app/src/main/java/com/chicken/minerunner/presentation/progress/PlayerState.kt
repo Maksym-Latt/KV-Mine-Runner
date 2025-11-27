@@ -6,10 +6,10 @@ data class ShopItemState(
     val subtitle: String,
     val basePrice: Int,
     val image: Int,
-    val level: Int = 0,
-    val maxLevel: Int = 3
+    val level: Int = 1,
+    val maxLevel: Int = 3,
+    val dynamicSubtitle: String = subtitle
 ) {
-    val owned: Boolean get() = level > 0
     val nextPrice: Int? get() = if (level >= maxLevel) null else basePrice * (level + 1)
 }
 

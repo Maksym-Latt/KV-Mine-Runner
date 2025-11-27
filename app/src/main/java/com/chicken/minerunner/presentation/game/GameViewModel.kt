@@ -28,13 +28,13 @@ import javax.inject.Inject
 class GameViewModel @Inject constructor(
     private val repo: PlayerRepository
 ) : ViewModel() {
+    private var itemLevels: Map<String, Int> = emptyMap()
 
     private val _ui = MutableStateFlow(startState())
     val ui = _ui.asStateFlow()
 
     private var ticker: Job? = null
     private var reward = false
-    private var itemLevels: Map<String, Int> = emptyMap()
 
     init {
         viewModelScope.launch {

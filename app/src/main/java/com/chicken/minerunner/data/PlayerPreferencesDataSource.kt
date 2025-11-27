@@ -39,14 +39,19 @@ class PlayerPreferencesDataSource @Inject constructor(
         val sfxEnabled: Boolean = true
     )
 
+    private val baseItemIds = listOf("magnet", "helmet", "extra_life")
+
     val state: Flow<PreferencesState> = dataStore.data.map { prefs ->
-        val eggs = prefs[Keys.eggs] ?: 0
+        val eggs = prefs[Keys.eggs] ?: 188880
         val musicEnabled = prefs[Keys.musicEnabled] ?: true
         val sfxEnabled = prefs[Keys.sfxEnabled] ?: true
-        val itemLevels = prefs.asMap()
-            .filterKeys { it.name.startsWith("item_") }
-            .mapKeys { (key, _) -> key.name.removePrefix("item_").removeSuffix("_level") }
-            .mapValues { (_, value) -> value as? Int ?: 0 }
+
+        val itemLevels = mutableMapOf<String, Int>()
+        baseItemIds.forEach { id ->
+            val key = Keys.itemLevel(id)
+            val level = prefs[key] ?: 1
+            itemLevels[id] = level
+        }
 
         PreferencesState(
             eggs = eggs,
@@ -90,4 +95,5 @@ class PlayerPreferencesDataSource @Inject constructor(
     suspend fun toggleSfx(enabled: Boolean) {
         dataStore.edit { prefs -> prefs[Keys.sfxEnabled] = enabled }
     }
+
 }

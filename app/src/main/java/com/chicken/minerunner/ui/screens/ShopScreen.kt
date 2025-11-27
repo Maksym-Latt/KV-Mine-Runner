@@ -113,7 +113,7 @@ fun ShopScreen(
             )
 
             Text(
-                text = item.subtitle,
+                text = item.dynamicSubtitle,
                 color = Color.White,
                 fontSize = 16.sp,
                 modifier = Modifier.padding(top = 4.dp)
@@ -187,35 +187,6 @@ fun ShopScreen(
                     onClick = {},
                     style = ChickenButtonStyle.Blue,
                     modifier = Modifier.fillMaxWidth(0.7f)
-                )
-            } else if (item.owned) {
-                PrimaryButton(
-                    text = "UPGRADE ${'$'}{item.nextPrice}",
-                    onClick = onPurchase,
-                    style = ChickenButtonStyle.Blue,
-                    modifier = Modifier.fillMaxWidth(0.7f),
-                    fontSize = 22.sp,
-                    content = {
-                        Text(
-                            text = "UPGRADE",
-                            color = Color.White,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Image(
-                            painter = painterResource(id = R.drawable.item_egg),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = item.nextPrice.toString(),
-                            color = Color.White,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
                 )
             } else {
                 Row(
