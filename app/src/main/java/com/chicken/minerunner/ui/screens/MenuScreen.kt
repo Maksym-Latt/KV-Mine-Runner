@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
@@ -30,12 +28,19 @@ import com.chicken.minerunner.R
 import com.chicken.minerunner.ui.components.EggCounter
 import com.chicken.minerunner.ui.components.GameTitle
 import com.chicken.minerunner.ui.theme.CopperDark
+import com.chicken.minerunner.ui.theme.OverlayBlue
 @Composable
 fun MenuScreen(
     eggs: Int,
     onStart: () -> Unit,
     onShop: () -> Unit,
-    onMenuClick: () -> Unit
+    onMenuClick: () -> Unit,
+    settingsVisible: Boolean,
+    musicEnabled: Boolean,
+    sfxEnabled: Boolean,
+    onMusicToggle: (Boolean) -> Unit,
+    onSfxToggle: (Boolean) -> Unit,
+    onCloseSettings: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -102,6 +107,62 @@ fun MenuScreen(
             )
 
             Spacer(modifier = Modifier.height(32.dp))
+        }
+
+        if (settingsVisible) {
+            SettingsOverlay(
+                musicEnabled = musicEnabled,
+                sfxEnabled = sfxEnabled,
+                onMusicToggle = onMusicToggle,
+                onSfxToggle = onSfxToggle,
+                onClose = onCloseSettings
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsOverlay(
+    musicEnabled: Boolean,
+    sfxEnabled: Boolean,
+    onMusicToggle: (Boolean) -> Unit,
+    onSfxToggle: (Boolean) -> Unit,
+    onClose: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(OverlayBlue.copy(alpha = 0.65f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            GameTitle()
+            Spacer(modifier = Modifier.height(12.dp))
+            PrimaryButton(
+                text = if (musicEnabled) "Music: ON" else "Music: OFF",
+                onClick = { onMusicToggle(!musicEnabled) },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            PrimaryButton(
+                text = if (sfxEnabled) "SFX: ON" else "SFX: OFF",
+                onClick = { onSfxToggle(!sfxEnabled) },
+                style = ChickenButtonStyle.Blue,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            SecondaryButton(
+                icon = rememberVectorPainter(Icons.Default.Settings),
+                onClick = onClose,
+                buttonSize = 56.dp,
+                iconSize = 28.dp,
+                cornerRadius = 12.dp
+            )
         }
     }
 }

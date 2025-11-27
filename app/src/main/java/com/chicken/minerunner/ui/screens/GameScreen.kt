@@ -25,6 +25,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,6 +51,7 @@ import com.chicken.minerunner.domain.model.ItemType
 import com.chicken.minerunner.domain.model.LaneType
 import com.chicken.minerunner.domain.model.SwipeDirection
 import com.chicken.minerunner.ui.components.EggCounter
+import com.chicken.minerunner.ui.sound.SoundManager
 import com.chicken.minerunner.ui.theme.CopperDark
 import com.chicken.minerunner.ui.theme.OverlayBlue
 import kotlin.math.abs
@@ -60,6 +65,9 @@ fun GameScreen(
     onPause: () -> Unit,
     onResume: () -> Unit,
     onExit: () -> Unit,
+    musicEnabled: Boolean,
+    sfxEnabled: Boolean,
+    soundManager: SoundManager,
     onGameOver: () -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -77,6 +85,46 @@ fun GameScreen(
 
     LaunchedEffect(state.status) {
         if (state.status is GameStatus.GameOver) onGameOver()
+    }
+
+    LaunchedEffect(musicEnabled, state.status) {
+        if (state.status is GameStatus.GameOver) return@LaunchedEffect
+        soundManager.playGameMusic(musicEnabled)
+    }
+
+    var lastEggs by remember { mutableIntStateOf(state.stats.eggs) }
+    var lastLives by remember { mutableIntStateOf(state.stats.lives) }
+    var magnetActive by remember { mutableStateOf(state.stats.magnetActiveMs > 0) }
+    var helmetActive by remember { mutableStateOf(state.stats.helmetActiveMs > 0) }
+
+    LaunchedEffect(state.stats.eggs) {
+        if (state.stats.eggs > lastEggs) {
+            soundManager.playSfx(R.raw.sfx_egg, sfxEnabled)
+        }
+        lastEggs = state.stats.eggs
+    }
+
+    LaunchedEffect(state.stats.lives) {
+        if (state.stats.lives > lastLives) {
+            soundManager.playSfx(R.raw.sfx_bonus, sfxEnabled)
+        }
+        lastLives = state.stats.lives
+    }
+
+    LaunchedEffect(state.stats.magnetActiveMs, state.stats.helmetActiveMs) {
+        val newMagnet = state.stats.magnetActiveMs > 0
+        val newHelmet = state.stats.helmetActiveMs > 0
+        if ((newMagnet && !magnetActive) || (newHelmet && !helmetActive)) {
+            soundManager.playSfx(R.raw.sfx_bonus, sfxEnabled)
+        }
+        magnetActive = newMagnet
+        helmetActive = newHelmet
+    }
+
+    LaunchedEffect(state.status) {
+        if (state.status is GameStatus.GameOver) {
+            soundManager.playSfx(R.raw.sfx_lose, sfxEnabled)
+        }
     }
 
     BoxWithConstraints(
