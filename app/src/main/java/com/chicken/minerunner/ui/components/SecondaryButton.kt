@@ -26,13 +26,15 @@ fun SecondaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 
-    // ------ параметры стиля ------
-    gradient: Brush = Brush.verticalGradient(
-        listOf(Color(0xFFFFA3DA), Color(0xFF834265))
+    gradient: Brush = Brush.horizontalGradient(
+        listOf(
+            Color(0xff286298),
+            Color(0xff519ee4),
+            Color(0xff296398)
+        )
     ),
     borderColor: Color = Color(0xff000000),
 
-    // ------ параметры размеров ------
     buttonSize: Dp = 60.dp,
     iconSize: Dp = 30.dp,
     cornerRadius: Dp = 14.dp

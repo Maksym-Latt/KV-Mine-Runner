@@ -36,10 +36,14 @@ fun EggCounter(
     eggIcon: Int,
     modifier: Modifier = Modifier,
 
-    gradient: Brush = Brush.verticalGradient(
-        listOf(Color(0xFFB9FF5E), Color(0xFF63B600))
+    gradient: Brush = Brush.horizontalGradient(
+        listOf(
+            Color(0xff387d07),
+            Color(0xff94e324),
+            Color(0xff387d07)
+        )
     ),
-    borderColor: Color = Color(0x003c7e00),
+    borderColor: Color = Color(0xff000000),
 
     height: Dp = 60.dp,
     horizontalPadding: Dp = 18.dp,
@@ -49,14 +53,14 @@ fun EggCounter(
     eggIconSize: Dp = 36.dp
 ) {
     Surface(
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius),
+        shape = RoundedCornerShape(cornerRadius),
         color = Color.Transparent,
         border = BorderStroke(2.dp, borderColor),
         modifier = modifier
             .height(height)
             .shadow(
                 elevation = elevation,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius),
+                shape = RoundedCornerShape(cornerRadius),
                 clip = false
             )
             .wrapContentWidth()
@@ -75,10 +79,6 @@ fun EggCounter(
                     fontSize = 26.sp,
                     outlineWidth = 4f,
                     fillWidth = false,
-                    outlineColor = Color(0xff000000),
-                    gradient = Brush.verticalGradient(
-                        listOf(Color(0xFFFFFFFF), Color(0xFFFFFFFF))
-                    ),
                     modifier = Modifier
                 )
                 Spacer(modifier = Modifier.width(8.dp))

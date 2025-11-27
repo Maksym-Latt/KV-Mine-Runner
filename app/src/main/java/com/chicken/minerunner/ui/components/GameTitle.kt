@@ -24,32 +24,46 @@ fun GameTitle(modifier: Modifier = Modifier) {
 
         GradientOutlinedText(
             text = "CHICKEN",
-            fontSize = 64.sp,
+            fontSize = 58.sp,
             outlineWidth = 10f,
-            outlineColor = Color(0xFF551A32),
+            outlineColor = Color(0xff1b1b1b),
             gradient = Brush.verticalGradient(
-                listOf(Color(0xFFFF88D0), Color(0xFFCA3CC7))
+                colors = listOf(
+                    Color(0xff936400),
+                    Color(0xffd1941a),
+                    Color(0xff946400)
+                )
             ),
         )
         GradientOutlinedText(
-            text = "Mine",
-            fontSize = 64.sp,
+            text = "MINE",
+            fontSize = 56.sp,
             outlineWidth = 10f,
-            outlineColor = Color(0xFF551A32),
+            outlineColor = Color(0xff1b1b1b),
             gradient = Brush.verticalGradient(
-                listOf(Color(0xFFFF88D0), Color(0xFFCA3CC7))
+                colors = listOf(
+                    Color(0xff245785),
+                    Color(0xff4a93d7),
+                    Color(0xff245786)
+                )
             ),
+            modifier = Modifier
+                .offset(y = (-40).dp)
         )
         GradientOutlinedText(
             text = "RUNNER",
             gradient = Brush.verticalGradient(
-                listOf(Color(0xFFFFC107), Color(0xFFFFC107))
+                colors = listOf(
+                    Color(0xff245785),
+                    Color(0xff4a93d7),
+                    Color(0xff245786)
+                )
             ),
-            outlineColor = Color(0xFF6A3C00),
-            fontSize = 30.sp,
+            outlineColor = Color(0xff1b1b1b),
+            fontSize = 46.sp,
             outlineWidth = 10f,
             modifier = Modifier
-                .offset(y = (-50).dp)
+                .offset(y = (-70).dp)
         )
     }
 }

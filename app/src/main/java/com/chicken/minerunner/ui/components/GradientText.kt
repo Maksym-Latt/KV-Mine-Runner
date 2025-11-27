@@ -23,22 +23,24 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import com.chicken.minerunner.R
 
-
 @Composable
 fun GradientOutlinedText(
     text: String,
     modifier: Modifier = Modifier,
 
-    // ----Настройки внешнего размещения----
     fillWidth: Boolean = true,
     textAlign: TextAlign = TextAlign.Center,
 
-    // ----Настройки текста----
     fontSize: TextUnit = 48.sp,
     outlineWidth: Float = 8f,
-    outlineColor: Color = Color(0xFF7A4F00),
-    gradient: Brush = Brush.verticalGradient(
-        listOf(Color(0xFFFFE082), Color(0xFFFFD54F))
+    outlineColor: Color = Color(0xff332000),
+
+    gradient: Brush = Brush.horizontalGradient(
+        colors = listOf(
+            Color(0xffffffff),
+            Color(0xffffffff),
+            Color(0xfffffffe)
+        )
     )
 ) {
     val fontFamily = remember {
@@ -52,8 +54,7 @@ fun GradientOutlinedText(
         textAlign = textAlign
     )
 
-    val internalModifier =
-        if (fillWidth) Modifier.fillMaxWidth() else Modifier
+    val internalModifier = if (fillWidth) Modifier.fillMaxWidth() else Modifier
 
     Box(modifier = modifier) {
 
@@ -61,17 +62,18 @@ fun GradientOutlinedText(
             withStyle(SpanStyle(brush = gradient)) { append(text) }
         }
 
-        // --- OUTLINE ---
         Text(
             text = text,
             style = styledText.copy(
                 color = outlineColor,
-                drawStyle = Stroke(width = outlineWidth, join = StrokeJoin.Round)
+                drawStyle = Stroke(
+                    width = outlineWidth,
+                    join = StrokeJoin.Round
+                )
             ),
             modifier = internalModifier
         )
 
-        // --- FILL ---
         Text(
             text = gradientText,
             style = styledText,

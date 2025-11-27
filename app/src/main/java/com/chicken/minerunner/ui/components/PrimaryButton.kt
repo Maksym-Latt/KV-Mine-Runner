@@ -45,14 +45,22 @@ fun PrimaryButton(
     val (border, gradientMain) = when (style) {
         ChickenButtonStyle.Green ->
             Pair(
-                Color(0xFF1F3406),
-                listOf(Color(0xFF9FEF26), Color(0xFF448B0D))
+                Color(0xff050404),
+                listOf(
+                    Color(0xff387d07),
+                    Color(0xffa6f628),
+                    Color(0xff397e08)
+                )
             )
 
         ChickenButtonStyle.Blue ->
             Pair(
-                Color(0xff091344),
-                listOf(Color(0xff5558eb), Color(0xFF7E98A4))
+                Color(0xff020000),
+                listOf(
+                    Color(0xff286298),
+                    Color(0xff519ee4),
+                    Color(0xff296398)
+                )
             )
     }
 
@@ -74,7 +82,7 @@ fun PrimaryButton(
         Box(
             modifier = Modifier
                 .background(
-                    Brush.verticalGradient(gradientMain)
+                    Brush.horizontalGradient(gradientMain)
                 )
                 .padding(vertical = 8.dp),
             contentAlignment = Alignment.Center
@@ -90,10 +98,6 @@ fun PrimaryButton(
                     text = text.uppercase(),
                     fontSize = fontSize,
                     outlineWidth = 4f,
-                    outlineColor = Color(0xff000000),
-                    gradient = Brush.verticalGradient(
-                        listOf(Color(0xFFEDE622), Color(0xFFE1AC14))
-                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
             }

@@ -42,12 +42,16 @@ fun AppRootNavigation() {
                     gameViewModel.startGame()
                     navController.navigate(Destinations.Game.route)
                 },
-                onShop = { navController.navigate(Destinations.Shop.route) }
+                onShop = { navController.navigate(Destinations.Shop.route) },
+                eggs = 0,
+                onMenuClick = {}
             )
         }
 
         composable(Destinations.Shop.route) {
-            ShopScreen(onBack = { navController.popBackStack() })
+            ShopScreen(
+                onBack = { navController.popBackStack() },
+            )
         }
 
         composable(Destinations.Game.route) {
