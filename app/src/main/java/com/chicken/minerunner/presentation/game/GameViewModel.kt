@@ -2,7 +2,7 @@ package com.chicken.minerunner.presentation.game
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
+import com.chicken.minerunner.domain.config.GameConfig
 import com.chicken.minerunner.domain.model.GameItem
 import com.chicken.minerunner.domain.model.GameStatus
 import com.chicken.minerunner.domain.model.GameUiState
@@ -11,6 +11,7 @@ import com.chicken.minerunner.domain.model.LaneSegment
 import com.chicken.minerunner.domain.model.LaneType
 import com.chicken.minerunner.domain.model.SwipeDirection
 import com.chicken.minerunner.domain.model.Trolley
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,12 +20,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.random.Random
-
-private const val WORLD_COLUMNS = 3
-private const val MAX_LIVES = 3
-private const val FRAME_MS = 16L
-private const val LANE_HEIGHT = 220f
-private const val CAMERA_LERP = 0.12f
 
 @HiltViewModel
 class GameViewModel @javax.inject.Inject constructor() : ViewModel() {
@@ -55,8 +50,8 @@ class GameViewModel @javax.inject.Inject constructor() : ViewModel() {
         _uiState.update { state ->
             if (state.status !is GameStatus.Running) return@update state
             when (direction) {
-                SwipeDirection.Left -> state.copy(chickenColumn = (state.chickenColumn - 1).coerceAtLeast(-(WORLD_COLUMNS / 2)))
-                SwipeDirection.Right -> state.copy(chickenColumn = (state.chickenColumn + 1).coerceAtMost(WORLD_COLUMNS / 2))
+                SwipeDirection.Left -> state.copy(chickenColumn = (state.chickenColumn - 1).coerceAtLeast(-(GameConfig.worldColumns / 2)))
+                SwipeDirection.Right -> state.copy(chickenColumn = (state.chickenColumn + 1).coerceAtMost(GameConfig.worldColumns / 2))
                 SwipeDirection.Forward -> advanceLane(state)
             }
         }
@@ -84,7 +79,7 @@ class GameViewModel @javax.inject.Inject constructor() : ViewModel() {
             ItemType.Egg -> stats.copy(eggs = stats.eggs + 1)
             ItemType.Magnet -> stats.copy(magnetActiveMs = 10_000)
             ItemType.Helmet -> stats.copy(helmetActiveMs = 3_000)
-            ItemType.ExtraLife -> stats.copy(lives = (stats.lives + 1).coerceAtMost(MAX_LIVES))
+            ItemType.ExtraLife -> stats.copy(lives = (stats.lives + 1).coerceAtMost(GameConfig.maxLives))
             else -> stats
         }
     }
@@ -95,7 +90,7 @@ class GameViewModel @javax.inject.Inject constructor() : ViewModel() {
         val hitsHelmet = stats.helmetActiveMs > 0
         val playerX = column.toFloat()
         val trolleyX = trolley.position
-        return if (abs(playerX - trolleyX) < 0.3f) {
+        return if (abs(playerX - trolleyX) < GameConfig.trolleyCollisionThreshold) {
             if (hitsHelmet) stats.copy(helmetActiveMs = 0) else stats.copy(lives = stats.lives - 1)
         } else stats
     }
@@ -104,7 +99,7 @@ class GameViewModel @javax.inject.Inject constructor() : ViewModel() {
         tickerJob?.cancel()
         tickerJob = viewModelScope.launch {
             while (true) {
-                delay(FRAME_MS)
+                delay(GameConfig.frameMs)
                 _uiState.update { state ->
                     if (state.status != GameStatus.Running) return@update state.copy(cameraOffset = lerpCamera(state))
 
@@ -120,7 +115,7 @@ class GameViewModel @javax.inject.Inject constructor() : ViewModel() {
     }
 
     private fun updateTimers(stats: com.chicken.minerunner.domain.model.GameStats): com.chicken.minerunner.domain.model.GameStats {
-        fun Long.step(): Long = (this - FRAME_MS).coerceAtLeast(0)
+        fun Long.step(): Long = (this - GameConfig.frameMs).coerceAtLeast(0)
         return stats.copy(
             magnetActiveMs = stats.magnetActiveMs.step(),
             helmetActiveMs = stats.helmetActiveMs.step()
@@ -130,7 +125,7 @@ class GameViewModel @javax.inject.Inject constructor() : ViewModel() {
     private fun updateTrolleys(state: GameUiState): GameUiState {
         val updatedSegments = state.segments.map { segment ->
             if (segment.trolley == null) return@map segment
-            val bounds = (WORLD_COLUMNS / 2).toFloat() + 0.8f
+            val bounds = GameConfig.trolleyBounds
             val newPos = segment.trolley.position + segment.trolley.direction * (segment.trolley.speed / 60f)
             val wrapped = when {
                 newPos > bounds -> -bounds
@@ -143,24 +138,24 @@ class GameViewModel @javax.inject.Inject constructor() : ViewModel() {
     }
 
     private fun lerpCamera(state: GameUiState): Float {
-        val target = state.chickenLane * LANE_HEIGHT
+        val target = state.chickenLane * GameConfig.laneHeight
         val current = state.cameraOffset
-        return current + (target - current) * CAMERA_LERP
+        return current + (target - current) * GameConfig.cameraLerp
     }
 
     private fun ensureSegmentCount(existing: List<LaneSegment>, nextLane: Int): List<LaneSegment> {
         val mutable = existing.toMutableList()
         val highest = existing.maxOfOrNull { it.index } ?: -1
         var cursor = highest
-        while (cursor < nextLane + 6) {
+        while (cursor < nextLane + GameConfig.preloadLanesAhead) {
             val newIndex = cursor + 1
-            mutable.add(generateSegment(newIndex))
+            mutable.add(generateSegment(newIndex, mutable))
             cursor++
         }
         return mutable
     }
 
-    private fun generateSegment(index: Int): LaneSegment {
+    private fun generateSegment(index: Int, existing: List<LaneSegment>): LaneSegment {
         if (index == 0) {
             return LaneSegment(index, LaneType.SafeZone, trolley = null, items = emptyList())
         }
@@ -171,18 +166,21 @@ class GameViewModel @javax.inject.Inject constructor() : ViewModel() {
         }
 
         val type = LaneType.Railway
-        val trolley = Trolley(
-            position = Random.nextInt(-1, 2).toFloat(),
-            direction = listOf(-1, 1).random(),
-            speed = Random.nextFloat() * 2f + 3f
-        )
+        val activeTrolleys = existing.count { it.trolley != null }
+        val trolley = if (activeTrolleys < GameConfig.maxTrolleysOnScreen && Random.nextFloat() < GameConfig.trolleySpawnChance) {
+            Trolley(
+                position = Random.nextInt(-1, 2).toFloat(),
+                direction = listOf(-1, 1).random(),
+                speed = Random.nextFloat() * (GameConfig.trolleyMaxSpeed - GameConfig.trolleyMinSpeed) + GameConfig.trolleyMinSpeed
+            )
+        } else null
         val items = listOfNotNull(spawnItem())
         return LaneSegment(index, type, trolley, items)
     }
 
     private fun spawnItem(): GameItem? {
         val roll = Random.nextInt(0, 100)
-        val column = Random.nextInt(-(WORLD_COLUMNS / 2), WORLD_COLUMNS / 2 + 1)
+        val column = Random.nextInt(-(GameConfig.worldColumns / 2), GameConfig.worldColumns / 2 + 1)
         return when {
             roll < 90 -> GameItem(column, ItemType.Egg)
             roll < 94 -> GameItem(column, ItemType.Helmet)
@@ -195,7 +193,7 @@ class GameViewModel @javax.inject.Inject constructor() : ViewModel() {
     private fun createInitialState(): GameUiState {
         val initialSegments = buildList {
             add(LaneSegment(index = 0, type = LaneType.SafeZone, trolley = null, items = emptyList()))
-            addAll((1..8).map { generateSegment(it) })
+            addAll((1..GameConfig.initialLanesAhead).map { generateSegment(it, this) })
         }
         return GameUiState(
             segments = initialSegments,

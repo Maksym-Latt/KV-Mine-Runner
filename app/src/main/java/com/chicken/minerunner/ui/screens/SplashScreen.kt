@@ -11,9 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.chicken.minerunner.R
+import androidx.compose.ui.unit.sp
+import com.chicken.minerunner.ui.components.GameTitle
+import com.chicken.minerunner.ui.components.GradientOutlinedText
 import com.chicken.minerunner.ui.theme.CopperDark
 import kotlinx.coroutines.delay
 
@@ -27,7 +30,11 @@ fun SplashScreen(onFinished: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CopperDark),
+            .background(
+                Brush.verticalGradient(
+                    listOf(CopperDark, Color(0xFF4C2C1A))
+                )
+            ),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -35,9 +42,12 @@ fun SplashScreen(onFinished: () -> Unit) {
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.padding(32.dp)
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.chicken_title),
-                contentDescription = "Logo"
+            GameTitle()
+            GradientOutlinedText(
+                text = "Loading the mine...",
+                outlineColor = Color.Black,
+                gradient = Brush.verticalGradient(listOf(Color.White, Color(0xFFFFE082))),
+                fontSize = 24.sp
             )
         }
     }

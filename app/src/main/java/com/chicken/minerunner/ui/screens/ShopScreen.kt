@@ -32,13 +32,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chicken.minerunner.R
-import com.chicken.minerunner.ui.components.GradientText
-import com.chicken.minerunner.ui.components.MineButton
+import com.chicken.dropper.ui.components.PrimaryButton
+import com.chicken.minerunner.ui.components.GradientOutlinedText
 import com.chicken.minerunner.ui.theme.CopperDark
 import com.chicken.minerunner.ui.theme.CopperLight
 import com.chicken.minerunner.ui.theme.Gold
-import com.chicken.minerunner.ui.theme.SkyAccent
-import com.chicken.minerunner.ui.theme.TealAccent
 
 private data class ShopItem(
     val title: String,
@@ -95,18 +93,16 @@ private fun ShopCard(item: ShopItem) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            GradientText(
+            GradientOutlinedText(
                 text = "MINE",
-                gradient = Brush.verticalGradient(listOf(Color.White, SkyAccent)),
+                gradient = Brush.verticalGradient(listOf(Color.White, Gold)),
                 outlineColor = Color(0xFF5D3B1D),
-                style = MaterialTheme.typography.titleLarge,
                 fontSize = 32.sp
             )
-            GradientText(
+            GradientOutlinedText(
                 text = item.title,
                 gradient = Brush.verticalGradient(listOf(Gold, Color.White)),
                 outlineColor = Color(0xFF5D3B1D),
-                style = MaterialTheme.typography.titleLarge,
                 fontSize = 30.sp
             )
             Text(
@@ -119,10 +115,10 @@ private fun ShopCard(item: ShopItem) {
                 contentDescription = null,
                 modifier = Modifier.size(120.dp)
             )
-            MineButton(
+            PrimaryButton(
                 text = item.price,
-                colors = listOf(Gold, SkyAccent),
-                onClick = { }
+                onClick = { },
+                style = com.chicken.dropper.ui.components.ChickenButtonStyle.Blue
             )
         }
     }
