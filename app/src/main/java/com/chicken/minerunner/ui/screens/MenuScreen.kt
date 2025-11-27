@@ -70,9 +70,6 @@ fun MenuScreen(
                 SecondaryButton(
                     icon = rememberVectorPainter(Icons.Default.Settings),
                     onClick = onMenuClick,
-                    buttonSize = 60.dp,
-                    iconSize = 30.dp,
-                    cornerRadius = 12.dp
                 )
 
                 EggCounter(
@@ -116,52 +113,6 @@ fun MenuScreen(
                 onMusicToggle = onMusicToggle,
                 onSfxToggle = onSfxToggle,
                 onClose = onCloseSettings
-            )
-        }
-    }
-}
-
-@Composable
-private fun SettingsOverlay(
-    musicEnabled: Boolean,
-    sfxEnabled: Boolean,
-    onMusicToggle: (Boolean) -> Unit,
-    onSfxToggle: (Boolean) -> Unit,
-    onClose: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(OverlayBlue.copy(alpha = 0.65f)),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            GameTitle()
-            Spacer(modifier = Modifier.height(12.dp))
-            PrimaryButton(
-                text = if (musicEnabled) "Music: ON" else "Music: OFF",
-                onClick = { onMusicToggle(!musicEnabled) },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            PrimaryButton(
-                text = if (sfxEnabled) "SFX: ON" else "SFX: OFF",
-                onClick = { onSfxToggle(!sfxEnabled) },
-                style = ChickenButtonStyle.Blue,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            SecondaryButton(
-                icon = rememberVectorPainter(Icons.Default.Settings),
-                onClick = onClose,
-                buttonSize = 56.dp,
-                iconSize = 28.dp,
-                cornerRadius = 12.dp
             )
         }
     }

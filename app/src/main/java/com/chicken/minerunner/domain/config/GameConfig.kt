@@ -1,6 +1,13 @@
 package com.chicken.minerunner.domain.config
 
 object GameConfig {
+
+    val columns = listOf(-1, 0, 1)
+    const val trackCount = 3
+
+    var safeZoneHeightPx: Float = 0f
+    var railwayHeightPx: Float = 0f
+
     const val worldColumns = 3
     const val maxLives = 3
 

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chicken.minerunner.domain.config.GameConfig
 import com.chicken.minerunner.domain.model.GameItem
+import com.chicken.minerunner.domain.model.GameStats
 import com.chicken.minerunner.domain.model.GameStatus
 import com.chicken.minerunner.domain.model.GameUiState
 import com.chicken.minerunner.domain.model.ItemType
@@ -21,197 +22,219 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.random.Random
+import javax.inject.Inject
 
 @HiltViewModel
-class GameViewModel @javax.inject.Inject constructor(
-    private val playerRepository: PlayerRepository
+class GameViewModel @Inject constructor(
+    private val repo: PlayerRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(createInitialState())
-    val uiState = _uiState.asStateFlow()
+    private val _ui = MutableStateFlow(startState())
+    val ui = _ui.asStateFlow()
 
-    private var tickerJob: Job? = null
-    private var runRewardDelivered: Boolean = false
+    private var ticker: Job? = null
+    private var reward = false
 
-    fun startGame() {
-        _uiState.value = createInitialState().copy(status = GameStatus.Running)
-        runRewardDelivered = false
-        startTicker()
+    fun start() {
+        _ui.value = startState().copy(status = GameStatus.Running)
+        reward = false
+        tick()
     }
 
-    fun pauseGame() {
-        _uiState.update { state ->
-            if (state.status is GameStatus.GameOver) state else state.copy(status = GameStatus.Paused)
+    fun pause() {
+        _ui.update {
+            if (it.status is GameStatus.GameOver) it else it.copy(status = GameStatus.Paused)
         }
     }
 
-    fun resumeGame() {
-        _uiState.update { state ->
-            if (state.status is GameStatus.GameOver) state else state.copy(status = GameStatus.Running)
+    fun resume() {
+        _ui.update {
+            if (it.status is GameStatus.GameOver) it else it.copy(status = GameStatus.Running)
         }
     }
 
-    fun swipe(direction: SwipeDirection) {
-        _uiState.update { state ->
-            if (state.status !is GameStatus.Running) return@update state
-            when (direction) {
-                SwipeDirection.Left -> state.copy(chickenColumn = (state.chickenColumn - 1).coerceAtLeast(-(GameConfig.worldColumns / 2)))
-                SwipeDirection.Right -> state.copy(chickenColumn = (state.chickenColumn + 1).coerceAtMost(GameConfig.worldColumns / 2))
-                SwipeDirection.Forward -> advanceLane(state)
+    fun swipe(dir: SwipeDirection) {
+        _ui.update { st ->
+            if (st.status !is GameStatus.Running) return@update st
+            when (dir) {
+                SwipeDirection.Left -> {
+                    val idx = GameConfig.columns.indexOf(st.chickenColumn)
+                    val nextIdx = (idx - 1).coerceAtLeast(0)
+                    st.copy(chickenColumn = GameConfig.columns[nextIdx])
+                }
+
+                SwipeDirection.Right -> {
+                    val idx = GameConfig.columns.indexOf(st.chickenColumn)
+                    val nextIdx = (idx + 1).coerceAtMost(GameConfig.columns.lastIndex)
+                    st.copy(chickenColumn = GameConfig.columns[nextIdx])
+                }
+                SwipeDirection.Forward ->
+                    forward(st)
             }
         }
     }
 
-    private fun advanceLane(current: GameUiState): GameUiState {
-        val nextLane = current.chickenLane + 1
-        val segments = ensureSegmentCount(current.segments, nextLane)
-        val lane = segments.firstOrNull { it.index == nextLane }
-        val updatedStats = handleItemPickup(current.stats, lane, current.chickenColumn)
-        val statsAfterCollision = lane?.let { checkCollision(updatedStats, it, current.chickenColumn) } ?: updatedStats
+    private fun forward(st: GameUiState): GameUiState {
+        val next = st.chickenLane + 1
+        val segs = fill(st.segments, next)
+        val lane = segs.firstOrNull { it.index == next }
+        val s1 = pick(st.stats, lane, st.chickenColumn)
+        val s2 = lane?.let { collide(s1, it, st.chickenColumn) } ?: s1
+        val status =
+            if (s2.lives <= 0) GameStatus.GameOver else st.status
 
-        val newStatus = if (statsAfterCollision.lives <= 0) GameStatus.GameOver else current.status
-        if (newStatus is GameStatus.GameOver && !runRewardDelivered) {
-            runRewardDelivered = true
+        if (status is GameStatus.GameOver && !reward) {
+            reward = true
             viewModelScope.launch {
-                playerRepository.addEggs(statsAfterCollision.eggs)
+                repo.addEggs(s2.eggs)
             }
         }
-        return current.copy(
-            chickenLane = nextLane,
-            segments = segments,
-            stats = statsAfterCollision.copy(distance = nextLane),
-            status = newStatus
+
+        return st.copy(
+            chickenLane = next,
+            segments = segs,
+            stats = s2.copy(distance = next),
+            status = status
         )
     }
 
-    private fun handleItemPickup(stats: com.chicken.minerunner.domain.model.GameStats, lane: LaneSegment?, column: Int): com.chicken.minerunner.domain.model.GameStats {
-        val item = lane?.items?.firstOrNull { it.active && it.column == column }
+    private fun pick(stats: GameStats, lane: LaneSegment?, col: Int): GameStats {
+        val item = lane?.items?.firstOrNull { it.active && it.column == col }
         return when (item?.type) {
             ItemType.Egg -> stats.copy(eggs = stats.eggs + 1)
-            ItemType.Magnet -> stats.copy(magnetActiveMs = 10_000)
-            ItemType.Helmet -> stats.copy(helmetActiveMs = 3_000)
+            ItemType.Magnet -> stats.copy(magnetActiveMs = 10000)
+            ItemType.Helmet -> stats.copy(helmetActiveMs = 3000)
             ItemType.ExtraLife -> stats.copy(lives = (stats.lives + 1).coerceAtMost(GameConfig.maxLives))
             else -> stats
         }
     }
 
-    private fun checkCollision(stats: com.chicken.minerunner.domain.model.GameStats, lane: LaneSegment, column: Int): com.chicken.minerunner.domain.model.GameStats {
+    private fun collide(stats: GameStats, lane: LaneSegment, col: Int): GameStats {
         if (lane.type != LaneType.Railway) return stats
-        val trolley = lane.trolley ?: return stats
-        val hitsHelmet = stats.helmetActiveMs > 0
-        val playerX = column.toFloat()
-        val trolleyX = trolley.position
-        return if (abs(playerX - trolleyX) < GameConfig.trolleyCollisionThreshold) {
-            if (hitsHelmet) stats.copy(helmetActiveMs = 0) else stats.copy(lives = stats.lives - 1)
+        val tr = lane.trolley ?: return stats
+        val dx = abs(col - tr.position)
+        val t = 0.8f
+        return if (dx < t) {
+            if (stats.helmetActiveMs > 0) stats.copy(helmetActiveMs = 0)
+            else stats.copy(lives = stats.lives - 1)
         } else stats
     }
 
-    private fun startTicker() {
-        tickerJob?.cancel()
-        tickerJob = viewModelScope.launch {
+    private fun tick() {
+        ticker?.cancel()
+        ticker = viewModelScope.launch {
             while (true) {
                 delay(GameConfig.frameMs)
-                _uiState.update { state ->
-                    if (state.status != GameStatus.Running) return@update state.copy(cameraOffset = lerpCamera(state))
+                _ui.update { st ->
+                    if (st.status != GameStatus.Running)
+                        return@update st.copy(cameraOffset = cam(st))
 
-                    val advanced = updateTrolleys(state)
-                    val timedStats = updateTimers(advanced.stats)
-                    advanced.copy(
-                        stats = timedStats,
-                        cameraOffset = lerpCamera(advanced)
+                    val a = move(st)
+                    val b = timers(a.stats)
+                    a.copy(
+                        stats = b,
+                        cameraOffset = cam(a)
                     )
                 }
             }
         }
     }
 
-    private fun updateTimers(stats: com.chicken.minerunner.domain.model.GameStats): com.chicken.minerunner.domain.model.GameStats {
-        fun Long.step(): Long = (this - GameConfig.frameMs).coerceAtLeast(0)
-        return stats.copy(
-            magnetActiveMs = stats.magnetActiveMs.step(),
-            helmetActiveMs = stats.helmetActiveMs.step()
+    private fun timers(s: GameStats): GameStats {
+        fun Long.drop() = (this - GameConfig.frameMs).coerceAtLeast(0)
+        return s.copy(
+            magnetActiveMs = s.magnetActiveMs.drop(),
+            helmetActiveMs = s.helmetActiveMs.drop()
         )
     }
 
-    private fun updateTrolleys(state: GameUiState): GameUiState {
-        val updatedSegments = state.segments.map { segment ->
-            if (segment.trolley == null) return@map segment
-            val bounds = GameConfig.trolleyBounds
-            val newPos = segment.trolley.position + segment.trolley.direction * (segment.trolley.speed / 60f)
-            val wrapped = when {
-                newPos > bounds -> -bounds
-                newPos < -bounds -> bounds
-                else -> newPos
+    private fun move(st: GameUiState): GameUiState {
+        val segs = st.segments.map { lane ->
+            if (lane.trolley == null) lane
+            else {
+                val b = GameConfig.trolleyBounds
+                val n = lane.trolley.position + lane.trolley.direction * (lane.trolley.speed / 60f)
+                val w = when {
+                    n > b -> -b
+                    n < -b -> b
+                    else -> n
+                }
+                lane.copy(trolley = lane.trolley.copy(position = w))
             }
-            segment.copy(trolley = segment.trolley.copy(position = wrapped))
         }
-        return state.copy(segments = updatedSegments)
+        return st.copy(segments = segs)
     }
 
-    private fun lerpCamera(state: GameUiState): Float {
-        val target = state.chickenLane * GameConfig.laneHeight
-        val current = state.cameraOffset
-        return current + (target - current) * GameConfig.cameraLerp
+    private fun fill(list: List<LaneSegment>, lane: Int): List<LaneSegment> {
+        val m = list.toMutableList()
+        var h = list.maxOfOrNull { it.index } ?: -1
+        while (h < lane + GameConfig.preloadLanesAhead) {
+            val i = h + 1
+            m.add(make(i, m))
+            h++
+        }
+        return m
     }
 
-    private fun ensureSegmentCount(existing: List<LaneSegment>, nextLane: Int): List<LaneSegment> {
-        val mutable = existing.toMutableList()
-        val highest = existing.maxOfOrNull { it.index } ?: -1
-        var cursor = highest
-        while (cursor < nextLane + GameConfig.preloadLanesAhead) {
-            val newIndex = cursor + 1
-            mutable.add(generateSegment(newIndex, mutable))
-            cursor++
-        }
-        return mutable
+    private fun make(i: Int, ex: List<LaneSegment>): LaneSegment {
+        if (i == 0) return LaneSegment(i, LaneType.SafeZone, null, emptyList())
+        if (i % 6 == 0) return LaneSegment(i, LaneType.SafeZone, null, emptyList())
+
+        val v = ex.takeLast(GameConfig.preloadLanesAhead + 5).count { it.trolley != null }
+        val t =
+            if (v < GameConfig.maxTrolleysOnScreen && Random.nextFloat() < GameConfig.trolleySpawnChance)
+                Trolley(
+                    position = Random.nextInt(-1, 2).toFloat(),
+                    direction = listOf(-1, 1).random(),
+                    speed = Random.nextFloat() *
+                            (GameConfig.trolleyMaxSpeed - GameConfig.trolleyMinSpeed) +
+                            GameConfig.trolleyMinSpeed
+                )
+            else null
+
+        val item = loot()
+        return LaneSegment(i, LaneType.Railway, t, listOfNotNull(item))
     }
 
-    private fun generateSegment(index: Int, existing: List<LaneSegment>): LaneSegment {
-        if (index == 0) {
-            return LaneSegment(index, LaneType.SafeZone, trolley = null, items = emptyList())
-        }
-
-        // every 6th lane is a double safe zone island
-        if (index % 6 == 0) {
-            return LaneSegment(index, LaneType.SafeZone, trolley = null, items = emptyList())
-        }
-
-        val type = LaneType.Railway
-        val activeTrolleys = existing.count { it.trolley != null }
-        val trolley = if (activeTrolleys < GameConfig.maxTrolleysOnScreen && Random.nextFloat() < GameConfig.trolleySpawnChance) {
-            Trolley(
-                position = Random.nextInt(-1, 2).toFloat(),
-                direction = listOf(-1, 1).random(),
-                speed = Random.nextFloat() * (GameConfig.trolleyMaxSpeed - GameConfig.trolleyMinSpeed) + GameConfig.trolleyMinSpeed
-            )
-        } else null
-        val items = listOfNotNull(spawnItem())
-        return LaneSegment(index, type, trolley, items)
-    }
-
-    private fun spawnItem(): GameItem? {
-        val roll = Random.nextInt(0, 100)
-        val column = Random.nextInt(-(GameConfig.worldColumns / 2), GameConfig.worldColumns / 2 + 1)
+    private fun loot(): GameItem? {
+        val r = Random.nextInt(0, 100)
+        val c = GameConfig.columns.random()
         return when {
-            roll < 90 -> GameItem(column, ItemType.Egg)
-            roll < 94 -> GameItem(column, ItemType.Helmet)
-            roll < 98 -> GameItem(column, ItemType.Magnet)
-            roll < 100 -> GameItem(column, ItemType.ExtraLife)
+            r < 90 -> GameItem(c, ItemType.Egg)
+            r < 94 -> GameItem(c, ItemType.Helmet)
+            r < 98 -> GameItem(c, ItemType.Magnet)
+            r < 100 -> GameItem(c, ItemType.ExtraLife)
             else -> null
         }
     }
 
-    private fun createInitialState(): GameUiState {
-        val initialSegments = buildList {
-            add(LaneSegment(index = 0, type = LaneType.SafeZone, trolley = null, items = emptyList()))
-            addAll((1..GameConfig.initialLanesAhead).map { generateSegment(it, this) })
+    private fun startState(): GameUiState {
+        val s = buildList {
+            add(LaneSegment(0, LaneType.SafeZone, null, emptyList()))
+            addAll((1..GameConfig.initialLanesAhead).map { make(it, this) })
         }
         return GameUiState(
-            segments = initialSegments,
+            segments = s,
             chickenColumn = 0,
             chickenLane = 0,
             status = GameStatus.Ready,
             cameraOffset = 0f
         )
+    }
+
+    private fun h(st: GameUiState, lane: Int): Float {
+        var sum = 0f
+        st.segments.forEach {
+            if (it.index >= lane) return sum
+            sum += if (it.type == LaneType.SafeZone) GameConfig.safeZoneHeightPx
+            else GameConfig.railwayHeightPx
+        }
+        return sum
+    }
+
+    private fun cam(st: GameUiState): Float {
+        val t = h(st, st.chickenLane)
+        val c = st.cameraOffset
+        return c + (t - c) * GameConfig.cameraLerp
     }
 }

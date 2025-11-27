@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,10 +28,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -83,9 +88,6 @@ fun ShopScreen(
                 SecondaryButton(
                     icon = rememberVectorPainter(Icons.Default.Home),
                     onClick = onBack,
-                    buttonSize = 48.dp,
-                    iconSize = 24.dp,
-                    cornerRadius = 12.dp
                 )
 
                 EggCounter(
@@ -94,21 +96,7 @@ fun ShopScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            GradientOutlinedText(
-                text = "MINE",
-                fontSize = 38.sp,
-                outlineWidth = 6f,
-                outlineColor = Color(0xFF5D3B1D),
-                gradient = Brush.horizontalGradient(
-                    listOf(
-                        Color(0xFFFFEB62),
-                        Color(0xFFFFC726),
-                        Color(0xFFFF9F00)
-                    )
-                )
-            )
+            Spacer(modifier = Modifier.weight(2f))
 
             GradientOutlinedText(
                 text = item.title,
@@ -130,49 +118,68 @@ fun ShopScreen(
                 fontSize = 16.sp,
                 modifier = Modifier.padding(top = 4.dp)
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.weight(1f))
 
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(260.dp),
+                    .weight(1f)
+                    .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-
-                Image(
-                    painter = painterResource(id = item.image),
-                    contentDescription = null,
-                    modifier = Modifier.size(220.dp)
-                )
-
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
+                    modifier = Modifier.fillMaxSize(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+
                     ShopArrow(
                         direction = ArrowDirection.Left,
                         onClick = onPrev
                     )
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth(0.62f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(id = item.image),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxWidth(1f).aspectRatio(0.65f),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+
                     ShopArrow(
                         direction = ArrowDirection.Right,
                         onClick = onNext
                     )
+
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.weight(1f))
 
-            Text(
-                text = "Level ${'$'}{item.level}/${'$'}{item.maxLevel}",
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium
+            GradientOutlinedText(
+                text = "Level ${item.level}/${item.maxLevel}",
+                fontSize = 28.sp,
+                outlineWidth = 6f,
+                outlineColor = Color(0xFF1B2F6B),
+                gradient = Brush.horizontalGradient(
+                    listOf(
+                        Color(0xFF6EB4FF),
+                        Color(0xFFA8D3FF),
+                        Color(0xFF6EB4FF)
+                    )
+                ),
+                fillWidth = false,
+                modifier = Modifier.padding(top = 4.dp)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+
+
+            Spacer(modifier = Modifier.weight(1f))
 
             if (item.nextPrice == null) {
                 PrimaryButton(
@@ -225,21 +232,21 @@ fun ShopScreen(
                             Text(
                                 text = item.basePrice.toString(),
                                 color = Color.White,
-                                fontSize = 24.sp,
+                                fontSize = 26.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Image(
                                 painter = painterResource(id = R.drawable.item_egg),
                                 contentDescription = null,
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(38.dp)
                             )
                         }
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
@@ -255,36 +262,40 @@ fun ShopArrow(
     Box(
         modifier = modifier
             .size(46.dp)
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.65f))
             .clickable { onClick() }
-            .padding(10.dp),
+            .padding(6.dp),
         contentAlignment = Alignment.Center
     ) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer {
-                    rotationY = rotation
-                }
+                .graphicsLayer { rotationY = rotation }
         ) {
+            val stroke = size.width * 0.20f
             val w = size.width
             val h = size.height
 
             val path = Path().apply {
-                moveTo(w * 0.25f, h * 0.5f)
-                lineTo(w * 0.65f, h * 0.2f)
-                lineTo(w * 0.65f, h * 0.8f)
-                close()
+                val midY = h * 0.5f
+                val topY = h * 0.25f
+                val botY = h * 0.75f
+                val startX = w * 0.30f
+                val endX = w * 0.70f
+
+                moveTo(startX, topY)
+                lineTo(endX, midY)
+                lineTo(startX, botY)
             }
 
             drawPath(
                 path = path,
-                color = Color(0xFF4A4A4A)
+                color = Color(0xFFE6E6E6),
+                style = Stroke(width = stroke, cap = StrokeCap.Round, join = StrokeJoin.Round)
             )
         }
     }
 }
+
 
 enum class ArrowDirection { Left, Right }
 

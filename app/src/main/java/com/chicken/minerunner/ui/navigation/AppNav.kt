@@ -5,6 +5,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -35,9 +37,10 @@ fun AppRootNavigation() {
     val soundManager = rememberSoundManager()
 
     NavHost(navController = navController, startDestination = Destinations.Splash.route) {
+
         composable(Destinations.Splash.route) {
             SplashScreen {
-                navController.navigate(Destinations.Menu.route) {
+                navController.safeNavigate(Destinations.Menu.route) {
                     popUpTo(Destinations.Splash.route) { inclusive = true }
                 }
             }
@@ -46,10 +49,12 @@ fun AppRootNavigation() {
         composable(Destinations.Menu.route) {
             MenuScreen(
                 onStart = {
-                    gameViewModel.startGame()
-                    navController.navigate(Destinations.Game.route)
+                    gameViewModel.start()
+                    navController.safeNavigate(Destinations.Game.route)
                 },
-                onShop = { navController.navigate(Destinations.Shop.route) },
+                onShop = {
+                    navController.safeNavigate(Destinations.Shop.route)
+                },
                 eggs = progressState.eggs,
                 onMenuClick = { progressViewModel.toggleSettings(true) },
                 settingsVisible = progressState.settingsVisible,
@@ -73,30 +78,42 @@ fun AppRootNavigation() {
                 onPrev = progressViewModel::previousItem,
                 onNext = progressViewModel::nextItem,
                 onPurchase = progressViewModel::purchaseOrUpgrade,
-                onBack = { navController.popBackStack() },
+                onBack = {
+                    navController.popBackStack(
+                        Destinations.Menu.route,
+                        inclusive = false
+                    )
+                },
             )
         }
 
         composable(Destinations.Game.route) {
-            val state by gameViewModel.uiState.collectAsStateWithLifecycle()
+            val state by gameViewModel.ui.collectAsStateWithLifecycle()
+
             GameScreen(
                 state = state,
                 onSwipe = { direction ->
                     if (direction == SwipeDirection.Forward) {
-                        soundManager.playSfx(com.chicken.minerunner.R.raw.sfx_jump, progressState.sfxEnabled)
+                        soundManager.playSfx(
+                            com.chicken.minerunner.R.raw.sfx_jump,
+                            progressState.sfxEnabled
+                        )
                     }
                     gameViewModel.swipe(direction)
                 },
-                onPause = gameViewModel::pauseGame,
-                onResume = gameViewModel::resumeGame,
+                onPause = gameViewModel::pause,
+                onResume = gameViewModel::resume,
                 onExit = {
-                    navController.popBackStack()
+                    navController.popBackStack(
+                        Destinations.Menu.route,
+                        inclusive = false
+                    )
                 },
                 musicEnabled = progressState.musicEnabled,
                 sfxEnabled = progressState.sfxEnabled,
                 soundManager = soundManager,
                 onGameOver = {
-                    navController.navigate(Destinations.GameOver.route) {
+                    navController.safeNavigate(Destinations.GameOver.route) {
                         popUpTo(Destinations.Game.route) { inclusive = true }
                     }
                 }
@@ -106,13 +123,32 @@ fun AppRootNavigation() {
         composable(Destinations.GameOver.route) {
             GameOverScreen(
                 onRetry = {
-                    gameViewModel.startGame()
-                    navController.navigate(Destinations.Game.route) {
-                        popUpTo(Destinations.Menu.route)
+                    gameViewModel.start()
+                    navController.safeNavigate(Destinations.Game.route) {
+                        popUpTo(Destinations.Menu.route) { inclusive = false }
                     }
                 },
-                onLobby = { navController.navigate(Destinations.Menu.route) }
+                onLobby = {
+                    navController.safeNavigate(Destinations.Menu.route) {
+                        popUpTo(Destinations.Menu.route) { inclusive = false }
+                    }
+                }
             )
         }
     }
 }
+
+fun NavController.safeNavigate(
+    route: String,
+    builder: NavOptionsBuilder.() -> Unit = {}
+) {
+    val currentRoute = currentDestination?.route
+    if (currentRoute == route) return
+
+    navigate(route) {
+        launchSingleTop = true
+        builder()
+    }
+}
+
+
