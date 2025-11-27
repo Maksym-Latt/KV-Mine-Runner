@@ -118,10 +118,12 @@ fun AppRootNavigation() {
                 eggs = progressState.eggs,
                 currentIndex = progressState.currentItemIndex,
                 items = progressState.shopItems,
+                message = progressState.message,
 
                 onPrev = progressViewModel::previousItem,
                 onNext = progressViewModel::nextItem,
                 onPurchase = progressViewModel::purchaseOrUpgrade,
+                onDismissMessage = progressViewModel::dismissMessage,
 
                 onBack = {
                     navController.popBackStack(Destinations.Menu.route, false)

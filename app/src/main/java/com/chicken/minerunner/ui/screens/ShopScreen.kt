@@ -19,8 +19,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,9 +53,11 @@ fun ShopScreen(
     eggs: Int,
     currentIndex: Int,
     items: List<ShopItemState>,
+    message: String?,
     onPrev: () -> Unit,
     onNext: () -> Unit,
     onPurchase: () -> Unit,
+    onDismissMessage: () -> Unit,
     onBack: () -> Unit
 ) {
     val item = items.getOrNull(currentIndex) ?: return
@@ -93,6 +96,19 @@ fun ShopScreen(
                 EggCounter(
                     count = eggs,
                     eggIcon = R.drawable.item_egg
+                )
+            }
+
+            if (message != null) {
+                AlertDialog(
+                    onDismissRequest = onDismissMessage,
+                    title = { Text(text = "Not enough eggs") },
+                    text = { Text(text = message) },
+                    confirmButton = {
+                        TextButton(onClick = onDismissMessage) {
+                            Text(text = "OK")
+                        }
+                    }
                 )
             }
 
@@ -181,7 +197,9 @@ fun ShopScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            if (item.nextPrice == null) {
+            val price = item.nextPrice
+
+            if (price == null) {
                 PrimaryButton(
                     text = "MAXED",
                     onClick = {},
@@ -194,14 +212,14 @@ fun ShopScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     PrimaryButton(
-                        text = item.basePrice.toString(),
+                        text = price.toString(),
                         onClick = onPurchase,
                         style = ChickenButtonStyle.Blue,
                         modifier = Modifier.fillMaxWidth(0.7f),
                         fontSize = 26.sp,
                         content = {
                             Text(
-                                text = item.basePrice.toString(),
+                                text = price.toString(),
                                 color = Color.White,
                                 fontSize = 26.sp,
                                 fontWeight = FontWeight.Bold
