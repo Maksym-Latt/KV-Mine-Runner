@@ -24,6 +24,8 @@ class PlayerPreferencesDataSource @Inject constructor(
 
     private val dataStore = context.playerDataStore
 
+    private val defaultEggs = 188880
+
     private object Keys {
         val eggs = intPreferencesKey("eggs")
         val musicEnabled = booleanPreferencesKey("music_enabled")
@@ -42,7 +44,7 @@ class PlayerPreferencesDataSource @Inject constructor(
     private val baseItemIds = listOf("magnet", "helmet", "extra_life")
 
     val state: Flow<PreferencesState> = dataStore.data.map { prefs ->
-        val eggs = prefs[Keys.eggs] ?: 188880
+        val eggs = prefs[Keys.eggs] ?: defaultEggs
         val musicEnabled = prefs[Keys.musicEnabled] ?: true
         val sfxEnabled = prefs[Keys.sfxEnabled] ?: true
 
@@ -64,7 +66,7 @@ class PlayerPreferencesDataSource @Inject constructor(
     suspend fun addEggs(amount: Int) {
         if (amount <= 0) return
         dataStore.edit { prefs ->
-            val current = prefs[Keys.eggs] ?: 0
+            val current = prefs[Keys.eggs] ?: defaultEggs
             prefs[Keys.eggs] = current + amount
         }
     }
@@ -73,7 +75,7 @@ class PlayerPreferencesDataSource @Inject constructor(
         if (amount <= 0) return false
         var success = false
         dataStore.edit { prefs ->
-            val current = prefs[Keys.eggs] ?: 0
+            val current = prefs[Keys.eggs] ?: defaultEggs
             if (current >= amount) {
                 prefs[Keys.eggs] = current - amount
                 success = true
