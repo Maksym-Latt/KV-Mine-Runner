@@ -2,6 +2,7 @@ package com.chicken.minerunner.data
 
 import com.chicken.minerunner.domain.repository.PlayerRepository
 import com.chicken.minerunner.presentation.progress.PlayerState
+import com.chicken.minerunner.presentation.progress.ShopItemLevel
 import com.chicken.minerunner.presentation.progress.ShopItemState
 import com.chicken.minerunner.presentation.progress.updateLevels
 import kotlinx.coroutines.flow.Flow
@@ -20,7 +21,7 @@ class PlayerRepositoryImpl @Inject constructor(
         val title: String,
         val subtitle: String,
         val image: Int,
-        val upgradePrices: List<Int>
+        val levels: List<ShopItemLevel>
     )
 
     private val baseItems = listOf(
@@ -29,47 +30,38 @@ class PlayerRepositoryImpl @Inject constructor(
             title = "MAGNET",
             subtitle = "Magnet up to 10 seconds",
             image = com.chicken.minerunner.R.drawable.item_magnet,
-            upgradePrices = listOf(1499, 2998, 4497)
+            levels = listOf(
+                ShopItemLevel(description = "Magnet works for 5 seconds", upgradePrice = 1499),
+                ShopItemLevel(description = "Magnet works for 5 seconds", upgradePrice = 2998),
+                ShopItemLevel(description = "Magnet works for 7 seconds", upgradePrice = 4497),
+                ShopItemLevel(description = "Magnet works for 10 seconds", upgradePrice = null)
+            )
         ),
         ShopItemDefinition(
             id = "helmet",
             title = "HELMET",
             subtitle = "Invulnerability up to 10 seconds",
             image = com.chicken.minerunner.R.drawable.item_helmet,
-            upgradePrices = listOf(5499, 10998, 16497)
+            levels = listOf(
+                ShopItemLevel(description = "Invulnerability for 5 seconds", upgradePrice = 5499),
+                ShopItemLevel(description = "Invulnerability for 5 seconds", upgradePrice = 10998),
+                ShopItemLevel(description = "Invulnerability for 7 seconds", upgradePrice = 16497),
+                ShopItemLevel(description = "Invulnerability for 10 seconds", upgradePrice = null)
+            )
         ),
         ShopItemDefinition(
             id = "extra_life",
             title = "EXTRA LIFE",
             subtitle = "Increase extra life spawn",
             image = com.chicken.minerunner.R.drawable.item_extra_life,
-            upgradePrices = listOf(8499, 16998, 25497)
+            levels = listOf(
+                ShopItemLevel(description = "Extra life spawn chance 1%", upgradePrice = 8499),
+                ShopItemLevel(description = "Extra life spawn chance 1%", upgradePrice = 16998),
+                ShopItemLevel(description = "Extra life spawn chance 2%", upgradePrice = 25497),
+                ShopItemLevel(description = "Extra life spawn chance 3%", upgradePrice = null)
+            )
         )
     )
-
-    private fun buildDynamicSubtitle(id: String, level: Int): String {
-        return when (id) {
-            "magnet" -> when (level) {
-                0,1 -> "Magnet works for 5 seconds"
-                2 -> "Magnet works for 7 seconds"
-                3 -> "Magnet works for 10 seconds"
-                else -> ""
-            }
-            "helmet" -> when (level) {
-                0,1 -> "Invulnerability for 5 seconds"
-                2 -> "Invulnerability for 7 seconds"
-                3 -> "Invulnerability for 10 seconds"
-                else -> ""
-            }
-            "extra_life" -> when (level) {
-                0,1 -> "Extra life spawn chance 1%"
-                2 -> "Extra life spawn chance 2%"
-                3 -> "Extra life spawn chance 3%"
-                else -> ""
-            }
-            else -> ""
-        }
-    }
 
 
     override val state: Flow<PlayerState> = preferencesDataSource.state.map { prefs ->
@@ -82,8 +74,7 @@ class PlayerRepositoryImpl @Inject constructor(
                 subtitle = base.subtitle,
                 image = base.image,
                 level = level,
-                upgradePrices = base.upgradePrices,
-                dynamicSubtitle = buildDynamicSubtitle(base.id, level)
+                levels = base.levels
             )
         }
 
