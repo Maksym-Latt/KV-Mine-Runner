@@ -1,16 +1,21 @@
 package com.chicken.minerunner.presentation.progress
 
+data class ShopItemLevel(
+    val description: String,
+    val upgradePrice: Int?
+)
+
 data class ShopItemState(
     val id: String,
     val title: String,
     val subtitle: String,
     val image: Int,
     val level: Int = 0,
-    val upgradePrices: List<Int> = emptyList(),
-    val dynamicSubtitle: String = subtitle
+    val levels: List<ShopItemLevel> = emptyList()
 ) {
-    val maxLevel: Int get() = upgradePrices.size
-    val nextPrice: Int? get() = upgradePrices.getOrNull(level)
+    val dynamicSubtitle: String get() = levels.getOrNull(level)?.description ?: subtitle
+    val maxLevel: Int get() = (levels.lastIndex).coerceAtLeast(0)
+    val nextPrice: Int? get() = levels.getOrNull(level)?.upgradePrice
 }
 
 data class PlayerState(
