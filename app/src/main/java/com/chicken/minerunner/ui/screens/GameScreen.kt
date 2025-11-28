@@ -89,6 +89,17 @@ fun GameScreen(
     sfxEnabled: Boolean,
     soundManager: SoundManager,
 ) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, e ->
+            if (e == Lifecycle.Event.ON_STOP) onPause()
+            if (e == Lifecycle.Event.ON_RESUME) onResume()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+
     LaunchedEffect(musicEnabled, state.status) {
         if (state.status !is GameStatus.GameOver) soundManager.playGameMusic(musicEnabled)
     }
@@ -138,37 +149,6 @@ fun GameScreen(
             }
         }
     }
-
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val currentStatus by rememberUpdatedState(state.status)
-    val currentOnPause by rememberUpdatedState(onPause)
-    val currentOnResume by rememberUpdatedState(onResume)
-
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-
-            when (event) {
-
-                Lifecycle.Event.ON_PAUSE -> {
-                    if (currentStatus is GameStatus.Running) {
-                        currentOnPause()
-                    }
-                }
-
-                Lifecycle.Event.ON_RESUME -> {
-                    if (currentStatus is GameStatus.Paused) {
-                        currentOnResume()
-                    }
-                }
-
-                else -> Unit
-            }
-        }
-
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
 
     Box(modifier = Modifier.fillMaxSize()) {
         var showIntro by remember { mutableStateOf(true) }
