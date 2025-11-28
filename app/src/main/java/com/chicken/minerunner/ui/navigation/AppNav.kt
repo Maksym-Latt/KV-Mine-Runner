@@ -11,16 +11,13 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavOptionsBuilder
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.chicken.minerunner.R
 import com.chicken.minerunner.domain.model.SwipeDirection
 import com.chicken.minerunner.presentation.game.GameViewModel
 import com.chicken.minerunner.presentation.progress.ProgressViewModel
-import com.chicken.minerunner.ui.screens.GameOverScreen
 import com.chicken.minerunner.ui.screens.GameScreen
 import com.chicken.minerunner.ui.screens.MenuScreen
 import com.chicken.minerunner.ui.screens.ShopScreen
@@ -36,12 +33,6 @@ sealed class Destinations(val route: String) {
     object Shop : Destinations("shop")
 
     object Game : Destinations("game")
-
-    object GameOver : Destinations("game_over?reward={reward}") {
-        fun routeWithReward(reward: Int): String {
-            return "game_over?reward=$reward"
-        }
-    }
 }
 
 @Composable
@@ -142,53 +133,20 @@ fun AppRootNavigation() {
                 },
                 onPause = gameViewModel::pause,
                 onResume = gameViewModel::resume,
+                onStartRun = gameViewModel::begin,
 
                 onExit = {
                     navController.popBackStack(Destinations.Menu.route, false)
                 },
 
+                onRetry = {
+                    gameViewModel.start()
+                    gameViewModel.begin()
+                },
+
                 musicEnabled = progressState.musicEnabled,
                 sfxEnabled = progressState.sfxEnabled,
                 soundManager = soundManager,
-
-                // ------ KEY PART ------
-                onGameOver = {
-                    val reward = state.stats.eggs
-                    navController.safeNavigate(
-                        Destinations.GameOver.routeWithReward(reward)
-                    ) {
-                        popUpTo(Destinations.Game.route) { inclusive = true }
-                    }
-                }
-                // ------------------------
-            )
-        }
-
-        // GAME OVER
-        composable(
-            route = Destinations.GameOver.route,
-            arguments = listOf(
-                navArgument("reward") { type = NavType.IntType }
-            )
-        ) { backStackEntry ->
-
-            val reward = backStackEntry.arguments?.getInt("reward") ?: 0
-
-            GameOverScreen(
-                reward = reward,
-
-                onRetry = {
-                    gameViewModel.start()
-                    navController.safeNavigate(Destinations.Game.route) {
-                        popUpTo(Destinations.Menu.route) { inclusive = false }
-                    }
-                },
-
-                onLobby = {
-                    navController.safeNavigate(Destinations.Menu.route) {
-                        popUpTo(Destinations.Menu.route) { inclusive = false }
-                    }
-                }
             )
         }
     }
