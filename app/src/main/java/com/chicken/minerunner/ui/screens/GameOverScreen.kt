@@ -38,7 +38,7 @@ fun GameOverScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background( Color(0x66000000)),
+            .background( Color(0xb3000000)),
         contentAlignment = Alignment.Center
     ) {
         Column(

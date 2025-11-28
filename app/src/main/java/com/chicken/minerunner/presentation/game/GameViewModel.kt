@@ -352,13 +352,8 @@ class GameViewModel @Inject constructor(
 
     private fun startState(): GameUiState {
         val s = buildList {
-            // 🔥 Два островка SafeZone в начале
             add(LaneSegment(-1, LaneType.SafeZone, null, emptyList(), flipped = true))
-
-            // Основной стартовый
             add(LaneSegment(0, LaneType.SafeZone, null, emptyList(), flipped = false))
-
-            // Дальше генератор как раньше
             addAll((1..GameConfig.initialLanesAhead).map { make(it, this) })
         }
         return GameUiState(
@@ -366,7 +361,16 @@ class GameViewModel @Inject constructor(
             chickenColumn = 0,
             chickenLane = 0,
             status = GameStatus.Ready,
-            cameraOffset = 0f
+            cameraOffset = 0f,
+            stats = GameStats(
+                eggs = 0,
+                lives = 1,
+                distance = 0,
+                magnetActiveMs = 0,
+                helmetActiveMs = 0,
+                magnetDurationMs = 0,
+                helmetDurationMs = 0
+            )
         )
     }
 

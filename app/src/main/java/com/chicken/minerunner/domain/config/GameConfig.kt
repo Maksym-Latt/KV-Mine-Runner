@@ -5,8 +5,6 @@ object GameConfig {
     val columns = listOf(-1, 0, 1)
     const val trackCount = 3
 
-    var cameraSmoothSpeed = 8f
-
     var safeZoneHeightPx: Float = 0f
     var railwayHeightPx: Float = 0f
 
@@ -14,7 +12,6 @@ object GameConfig {
     const val maxLives = 3
 
     const val frameMs = 16L
-    const val cameraLerp = 0.12f
     const val preloadLanesAhead = 6
     const val initialLanesAhead = 8
 

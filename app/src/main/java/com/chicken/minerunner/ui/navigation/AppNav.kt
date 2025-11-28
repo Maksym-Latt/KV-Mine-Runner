@@ -18,11 +18,11 @@ import com.chicken.minerunner.R
 import com.chicken.minerunner.domain.model.SwipeDirection
 import com.chicken.minerunner.presentation.game.GameViewModel
 import com.chicken.minerunner.presentation.progress.ProgressViewModel
+import com.chicken.minerunner.sound.SoundManager
 import com.chicken.minerunner.ui.screens.GameScreen
 import com.chicken.minerunner.ui.screens.MenuScreen
 import com.chicken.minerunner.ui.screens.ShopScreen
 import com.chicken.minerunner.ui.screens.SplashScreen
-import com.chicken.minerunner.sound.rememberSoundManager
 
 sealed class Destinations(val route: String) {
 
@@ -43,24 +43,6 @@ fun AppRootNavigation() {
     val progressViewModel: ProgressViewModel = hiltViewModel()
 
     val progressState by progressViewModel.uiState.collectAsStateWithLifecycle()
-    val soundManager = rememberSoundManager()
-
-    DisposableEffect(soundManager) {
-        val lifecycle = ProcessLifecycleOwner.get().lifecycle
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_STOP -> soundManager.pauseAll()
-                Lifecycle.Event.ON_START -> soundManager.resumePaused()
-                else -> Unit
-            }
-        }
-
-        lifecycle.addObserver(observer)
-
-        onDispose {
-            lifecycle.removeObserver(observer)
-        }
-    }
 
     NavHost(
         navController = navController,
@@ -133,7 +115,6 @@ fun AppRootNavigation() {
                 },
                 onPause = gameViewModel::pause,
                 onResume = gameViewModel::resume,
-                onStartRun = gameViewModel::begin,
 
                 onExit = {
                     navController.popBackStack(Destinations.Menu.route, false)

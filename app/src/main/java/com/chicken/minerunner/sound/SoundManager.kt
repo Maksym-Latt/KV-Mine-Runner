@@ -1,111 +1,166 @@
 package com.chicken.minerunner.sound
 
 import android.content.Context
+import android.media.AudioAttributes
 import android.media.MediaPlayer
+import android.media.SoundPool
 import androidx.annotation.RawRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.chicken.minerunner.R
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class SoundManager(private val context: Context) {
+@Singleton
+class SoundManager @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
 
-    private var menuPlayer: MediaPlayer? = null
-    private var gamePlayer: MediaPlayer? = null
-    private var menuWasPaused = false
-    private var gameWasPaused = false
+    private enum class Channel { MENU, GAME }
 
-    fun playMenuMusic(enabled: Boolean) {
-        if (!enabled) {
-            stopMenuMusic()
-            return
-        }
-        if (menuPlayer == null) {
-            menuPlayer = MediaPlayer.create(context, R.raw.music_menu).apply {
-                isLooping = true
+    private var currentChannel: Channel? = null
+    private var resumeAfterLifecyclePause = false
+
+    private val musicPlayers = mutableMapOf<Channel, MediaPlayer>()
+
+    private val soundPool = SoundPool.Builder()
+        .setMaxStreams(6)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+        )
+        .build()
+
+    private val loadedSfx = mutableMapOf<Int, Int>()
+    private val readySfx = mutableSetOf<Int>()
+    private val pendingPlay = mutableSetOf<Int>()
+
+    init {
+        soundPool.setOnLoadCompleteListener { pool, sampleId, status ->
+            if (status == 0) {
+                readySfx += sampleId
+                if (pendingPlay.remove(sampleId)) {
+                    pool.play(sampleId, 1f, 1f, 1, 0, 1f)
+                }
+            } else {
+                pendingPlay.remove(sampleId)
             }
         }
-        if (menuPlayer?.isPlaying != true) {
-            menuPlayer?.start()
-        }
-        menuWasPaused = false
-        stopGameMusic()
+    }
+
+    // ---- MUSIC ----
+
+    fun playMenuMusic(enabled: Boolean) {
+        if (!enabled) return stopMusic()
+        playMusic(Channel.MENU, R.raw.music_menu)
     }
 
     fun playGameMusic(enabled: Boolean) {
-        if (!enabled) {
-            stopGameMusic()
-            return
-        }
-        if (gamePlayer == null) {
-            gamePlayer = MediaPlayer.create(context, R.raw.music_game).apply {
-                isLooping = true
-            }
-        }
-        if (gamePlayer?.isPlaying != true) {
-            gamePlayer?.start()
-        }
-        gameWasPaused = false
-        stopMenuMusic()
+        if (!enabled) return stopMusic()
+        playMusic(Channel.GAME, R.raw.music_game)
     }
 
-    fun stopAll() {
-        stopMenuMusic()
-        stopGameMusic()
-    }
+    private fun playMusic(channel: Channel, @RawRes res: Int) {
+        if (currentChannel == channel && musicPlayers[channel]?.isPlaying == true) return
 
-    fun pauseAll() {
-        menuPlayer?.let {
-            if (it.isPlaying) {
-                it.pause()
-                menuWasPaused = true
+        currentChannel?.let { old ->
+            musicPlayers[old]?.pause()
+        }
+
+        val mp = ensurePlayer(channel, res)
+        currentChannel = if (mp != null) channel else null
+
+        mp?.let {
+            it.isLooping = true
+            try {
+                it.start()
+            } catch (_: IllegalStateException) {
+                musicPlayers.remove(channel)
             }
         }
-        gamePlayer?.let {
-            if (it.isPlaying) {
-                it.pause()
-                gameWasPaused = true
+
+        resumeAfterLifecyclePause = false
+    }
+
+    private fun ensurePlayer(channel: Channel, @RawRes res: Int): MediaPlayer? {
+        musicPlayers[channel]?.let { return it }
+
+        return runCatching { MediaPlayer.create(context, res) }
+            .getOrNull()
+            ?.also { mp ->
+                mp.isLooping = true
+                musicPlayers[channel] = mp
+            }
+    }
+
+    fun stopMusic() {
+        currentChannel?.let { ch ->
+            musicPlayers[ch]?.pause()
+            musicPlayers[ch]?.seekTo(0)
+        }
+        currentChannel = null
+        resumeAfterLifecyclePause = false
+    }
+
+    fun pauseForLifecycle() {
+        currentChannel?.let { ch ->
+            musicPlayers[ch]?.let { mp ->
+                if (mp.isPlaying) {
+                    resumeAfterLifecyclePause = true
+                    mp.pause()
+                }
             }
         }
     }
 
-    fun resumePaused() {
-        if (menuWasPaused) {
-            menuPlayer?.start()
+    fun resumeAfterLifecycle() {
+        if (!resumeAfterLifecyclePause) return
+        resumeAfterLifecyclePause = false
+
+        currentChannel?.let { ch ->
+            musicPlayers[ch]?.let { mp ->
+                if (!mp.isPlaying) {
+                    try {
+                        mp.start()
+                    } catch (_: IllegalStateException) {
+                        musicPlayers.remove(ch)
+                        currentChannel = null
+                    }
+                }
+            }
         }
-        if (gameWasPaused) {
-            gamePlayer?.start()
-        }
-        menuWasPaused = false
-        gameWasPaused = false
     }
+
+    // ---- SFX ----
 
     fun playSfx(@RawRes resId: Int, enabled: Boolean) {
         if (!enabled) return
-        val player = MediaPlayer.create(context, resId)
-        player.setOnCompletionListener { it.release() }
-        player.start()
-    }
 
-    private fun stopMenuMusic() {
-        menuPlayer?.let {
-            if (it.isPlaying) it.stop()
-            it.release()
+        val sample = loadedSfx[resId]
+        if (sample != null) {
+            if (readySfx.contains(sample)) {
+                soundPool.play(sample, 1f, 1f, 1, 0, 1f)
+            } else {
+                pendingPlay += sample
+            }
+            return
         }
-        menuPlayer = null
-    }
 
-    private fun stopGameMusic() {
-        gamePlayer?.let {
-            if (it.isPlaying) it.stop()
-            it.release()
+        val loadId = soundPool.load(context, resId, 1)
+        if (loadId != 0) {
+            loadedSfx[resId] = loadId
+            pendingPlay += loadId
         }
-        gamePlayer = null
     }
-}
 
-@Composable
-fun rememberSoundManager(): SoundManager {
-    val context = LocalContext.current
-    return remember { SoundManager(context) }
+    fun release() {
+        stopMusic()
+        musicPlayers.values.forEach { it.release() }
+        musicPlayers.clear()
+        soundPool.release()
+    }
 }

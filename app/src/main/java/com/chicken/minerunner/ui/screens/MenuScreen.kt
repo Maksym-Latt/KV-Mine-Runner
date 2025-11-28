@@ -101,7 +101,7 @@ fun MenuScreen(
             ActionButton(
                 label = "START",
                 onPress = onStart,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(0.9f)
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -110,7 +110,7 @@ fun MenuScreen(
                 label = "SHOP",
                 onPress = onShop,
                 variant = ChickenButtonStyleVariant.Blue,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(0.9f)
             )
 
             Spacer(modifier = Modifier.weight(1.5f))

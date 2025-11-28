@@ -77,7 +77,6 @@ fun GameScreen(
     onSwipe: (SwipeDirection) -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit,
-    onStartRun: () -> Unit,
     onExit: () -> Unit,
     onRetry: () -> Unit,
     musicEnabled: Boolean,
@@ -131,6 +130,7 @@ fun GameScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        var showIntro by remember { mutableStateOf(true) }
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
@@ -335,8 +335,8 @@ fun GameScreen(
             PauseOverlay(onResume = onResume, onRestart = onExit, onExit = onExit)
         }
 
-        if (state.status is GameStatus.Ready) {
-            GameIntroOverlay(onStart = onStartRun)
+        if (showIntro) {
+            GameIntroOverlay(onStart = { showIntro = false })
         }
 
         if (state.status is GameStatus.GameOver) {
@@ -421,49 +421,6 @@ private fun TopPanel(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun GameIntroOverlay(onStart: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.45f)),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            GradientText(
-                text = "Как играть", 
-                size = 34.sp,
-                stroke = 7f,
-                strokeColor = Color.Black,
-                brush = Brush.horizontalGradient(
-                    listOf(Color(0xfff7b733), Color(0xfffc4a1a))
-                )
-            )
-
-            Text(
-                text = "Свайпайте влево и вправо, чтобы менять рельсы.\nСвайп вверх, чтобы бежать вперед и собирать яйца.\nИзбегайте вагонеток или наденьте шлем, чтобы пережить удар!",
-                color = Color.White,
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center
-            )
-
-            ActionButton(
-                label = "Побежали!",
-                onPress = onStart,
-                labelSize = 22.sp,
-                variant = ChickenButtonStyleVariant.Blue,
-                modifier = Modifier.fillMaxWidth(0.8f)
-            )
         }
     }
 }

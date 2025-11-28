@@ -7,12 +7,16 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.chicken.minerunner.sound.SoundManager
 import com.chicken.minerunner.ui.navigation.AppRootNavigation
 import com.chicken.minerunner.ui.theme.MineRunnerTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject lateinit var soundManager: SoundManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -25,6 +29,21 @@ class MainActivity : ComponentActivity() {
                 AppRootNavigation()
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        soundManager.resumeAfterLifecycle()
+    }
+
+    override fun onPause() {
+        soundManager.pauseForLifecycle()
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        soundManager.release()
+        super.onDestroy()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
