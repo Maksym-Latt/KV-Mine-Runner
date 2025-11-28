@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun SecondaryButton(
-    icon: Painter,
+    iconPainter: Painter,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 
@@ -59,7 +59,7 @@ fun SecondaryButton(
             contentAlignment = Alignment.Center
         ) {
             Image(
-                painter = icon,
+                painter = iconPainter,
                 contentDescription = null,
                 modifier = Modifier.size(iconSize)
             )

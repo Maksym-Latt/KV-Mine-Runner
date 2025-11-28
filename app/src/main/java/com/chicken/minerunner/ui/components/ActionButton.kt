@@ -1,6 +1,5 @@
 package com.chicken.dropper.ui.components
 
-import android.R.attr.text
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,25 +10,19 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.chicken.minerunner.ui.components.GradientOutlinedText
+import com.chicken.minerunner.ui.components.GradientText
 
-enum class ChickenButtonStyle {
+enum class ChickenButtonStyleVariant {
     Green, Blue
 }
 
@@ -38,12 +31,12 @@ fun PrimaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    style: ChickenButtonStyle = ChickenButtonStyle.Green,
+    style: ChickenButtonStyleVariant = ChickenButtonStyleVariant.Green,
     fontSize: TextUnit = 32.sp,
     content: (@Composable RowScope.() -> Unit)? = null
 ) {
     val (border, gradientMain) = when (style) {
-        ChickenButtonStyle.Green ->
+        ChickenButtonStyleVariant.Green ->
             Pair(
                 Color(0xff050404),
                 listOf(
@@ -53,7 +46,7 @@ fun PrimaryButton(
                 )
             )
 
-        ChickenButtonStyle.Blue ->
+        ChickenButtonStyleVariant.Blue ->
             Pair(
                 Color(0xff020000),
                 listOf(
@@ -94,10 +87,10 @@ fun PrimaryButton(
                     content = content
                 )
             } else {
-                GradientOutlinedText(
+                GradientText(
                     text = text.uppercase(),
-                    fontSize = fontSize,
-                    outlineWidth = 4f,
+                    size = fontSize,
+                    stroke = 4f,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
