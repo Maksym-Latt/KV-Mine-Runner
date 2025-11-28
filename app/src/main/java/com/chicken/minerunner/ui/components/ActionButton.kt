@@ -27,15 +27,15 @@ enum class ChickenButtonStyleVariant {
 }
 
 @Composable
-fun PrimaryButton(
-    text: String,
-    onClick: () -> Unit,
+fun ActionButton(
+    label: String,
+    onPress: () -> Unit,
     modifier: Modifier = Modifier,
-    style: ChickenButtonStyleVariant = ChickenButtonStyleVariant.Green,
-    fontSize: TextUnit = 32.sp,
-    content: (@Composable RowScope.() -> Unit)? = null
+    variant: ChickenButtonStyleVariant = ChickenButtonStyleVariant.Green,
+    labelSize: TextUnit = 32.sp,
+    extraContent: (@Composable RowScope.() -> Unit)? = null
 ) {
-    val (border, gradientMain) = when (style) {
+    val (border, gradientMain) = when (variant) {
         ChickenButtonStyleVariant.Green ->
             Pair(
                 Color(0xff050404),
@@ -61,7 +61,7 @@ fun PrimaryButton(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
-            .clickable(onClick = onClick)
+            .clickable(onClick = onPress)
             .shadow(
                 elevation = 14.dp,
                 shape = RoundedCornerShape(22.dp),
@@ -80,16 +80,16 @@ fun PrimaryButton(
                 .padding(vertical = 8.dp),
             contentAlignment = Alignment.Center
         ) {
-            if (content != null) {
+            if (extraContent != null) {
                 Row(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
-                    content = content
+                    content = extraContent
                 )
             } else {
                 GradientText(
-                    text = text.uppercase(),
-                    size = fontSize,
+                    text = label.uppercase(),
+                    size = labelSize,
                     stroke = 4f,
                     modifier = Modifier.fillMaxWidth()
                 )

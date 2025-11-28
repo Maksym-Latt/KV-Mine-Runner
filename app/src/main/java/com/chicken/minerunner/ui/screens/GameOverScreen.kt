@@ -1,12 +1,10 @@
 package com.chicken.minerunner.ui.screens
 
-import android.widget.ImageView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,12 +24,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.chicken.dropper.ui.components.ChickenButtonStyle
-import com.chicken.dropper.ui.components.PrimaryButton
+import com.chicken.dropper.ui.components.ChickenButtonStyleVariant
+import com.chicken.dropper.ui.components.ActionButton
 import com.chicken.minerunner.R
-import com.chicken.minerunner.ui.components.GameTitle
-import com.chicken.minerunner.ui.components.GradientOutlinedText
-import com.chicken.minerunner.ui.theme.CopperDark
+import com.chicken.minerunner.ui.components.GradientText
+
 @Composable
 fun GameOverScreen(
     reward: Int,
@@ -54,13 +50,13 @@ fun GameOverScreen(
         ) {
 
             // ---------- Title ----------
-            GradientOutlinedText(
+            GradientText(
                 text = "BLOCKED\nTUNNEL!",
-                fontSize = 40.sp,
-                outlineColor = Color.Black,
-                outlineWidth = 7f,
-                textAlign = TextAlign.Center,
-                gradient = Brush.horizontalGradient(
+                size = 40.sp,
+                strokeColor = Color.Black,
+                stroke = 7f,
+                alignment = TextAlign.Center,
+                brush = Brush.horizontalGradient(
                     listOf(
                         Color(0xff286298),
                         Color(0xff519ee4),
@@ -85,22 +81,22 @@ fun GameOverScreen(
             )
 
             // ---------- Buttons ----------
-            PrimaryButton(
-                text = "Try again",
-                onClick = onRetry,
-                fontSize = 22.sp,
-                style = ChickenButtonStyle.Blue,
+            ActionButton(
+                label = "Try again",
+                onPress = onRetry,
+                labelSize = 22.sp,
+                variant = ChickenButtonStyleVariant.Blue,
                 modifier = Modifier
                     .fillMaxWidth(0.80f)
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            PrimaryButton(
-                text = "Lobby",
-                onClick = onLobby,
-                fontSize = 28.sp,
-                style = ChickenButtonStyle.Green,
+            ActionButton(
+                label = "Lobby",
+                onPress = onLobby,
+                labelSize = 28.sp,
+                variant = ChickenButtonStyleVariant.Green,
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
             )
@@ -126,14 +122,14 @@ fun RewardRow(
         )
 
 
-        GradientOutlinedText(
+        GradientText(
             text = "+$reward",
-            fontSize = 36.sp,
-            outlineWidth = 15f,
-            fillWidth = false,
-            outlineColor = Color.Black,
+            size = 36.sp,
+            stroke = 15f,
+            expand = false,
+            strokeColor = Color.Black,
             modifier = Modifier.offset(y = 40.dp),
-            gradient = Brush.horizontalGradient(
+            brush = Brush.horizontalGradient(
                 listOf(
                     Color(0xff286298),
                     Color(0xff519ee4),

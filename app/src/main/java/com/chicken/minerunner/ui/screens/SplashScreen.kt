@@ -1,6 +1,5 @@
 package com.chicken.minerunner.ui.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,8 +14,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.chicken.minerunner.ui.components.GameTitle
-import com.chicken.minerunner.ui.components.GradientOutlinedText
+import com.chicken.minerunner.ui.components.GameTitleColumn
+import com.chicken.minerunner.ui.components.GradientText
 import com.chicken.minerunner.ui.theme.CopperDark
 import kotlinx.coroutines.delay
 
@@ -42,12 +41,12 @@ fun SplashScreen(onFinished: () -> Unit) {
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.padding(32.dp)
         ) {
-            GameTitle()
-            GradientOutlinedText(
+            GameTitleColumn()
+            GradientText(
                 text = "Loading the mine...",
-                outlineColor = Color.Black,
-                gradient = Brush.verticalGradient(listOf(Color.White, Color(0xFFFFE082))),
-                fontSize = 24.sp
+                strokeColor = Color.Black,
+                brush = Brush.verticalGradient(listOf(Color.White, Color(0xFFFFE082))),
+                size = 24.sp
             )
         }
     }

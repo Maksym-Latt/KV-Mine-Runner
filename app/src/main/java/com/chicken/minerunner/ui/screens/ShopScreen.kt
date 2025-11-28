@@ -2,7 +2,6 @@ package com.chicken.minerunner.ui.screens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,11 +11,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.AlertDialog
@@ -25,7 +22,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -36,17 +32,16 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.chicken.dropper.ui.components.ChickenButtonStyle
-import com.chicken.dropper.ui.components.PrimaryButton
-import com.chicken.dropper.ui.components.SecondaryButton
+import com.chicken.dropper.ui.components.ChickenButtonStyleVariant
+import com.chicken.dropper.ui.components.ActionButton
+import com.chicken.dropper.ui.components.IconAccentButton
 import com.chicken.minerunner.R
 import com.chicken.minerunner.presentation.progress.ShopItemState
-import com.chicken.minerunner.ui.components.EggCounter
-import com.chicken.minerunner.ui.components.GradientOutlinedText
+import com.chicken.minerunner.ui.components.EggCounterBox
+import com.chicken.minerunner.ui.components.GradientText
 
 @Composable
 fun ShopScreen(
@@ -88,14 +83,14 @@ fun ShopScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                SecondaryButton(
-                    icon = rememberVectorPainter(Icons.Default.Home),
-                    onClick = onBack,
+                IconAccentButton(
+                    iconPainter = rememberVectorPainter(Icons.Default.Home),
+                    onPress = onBack,
                 )
 
-                EggCounter(
-                    count = eggs,
-                    eggIcon = R.drawable.item_egg
+                EggCounterBox(
+                    amount = eggs,
+                    iconRes = R.drawable.item_egg
                 )
             }
 
@@ -114,12 +109,12 @@ fun ShopScreen(
 
             Spacer(modifier = Modifier.weight(2f))
 
-            GradientOutlinedText(
+            GradientText(
                 text = item.title,
-                fontSize = 40.sp,
-                outlineWidth = 6f,
-                outlineColor = Color(0xFF2B3C8A),
-                gradient = Brush.horizontalGradient(
+                size = 40.sp,
+                stroke = 6f,
+                strokeColor = Color(0xFF2B3C8A),
+                brush = Brush.horizontalGradient(
                     listOf(
                         Color(0xFF84B8FF),
                         Color(0xFF5AA2FF),
@@ -177,19 +172,19 @@ fun ShopScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            GradientOutlinedText(
+            GradientText(
                 text = "Level ${item.level}/${item.maxLevel}",
-                fontSize = 28.sp,
-                outlineWidth = 6f,
-                outlineColor = Color(0xFF1B2F6B),
-                gradient = Brush.horizontalGradient(
+                size = 28.sp,
+                stroke = 6f,
+                strokeColor = Color(0xFF1B2F6B),
+                brush = Brush.horizontalGradient(
                     listOf(
                         Color(0xFF6EB4FF),
                         Color(0xFFA8D3FF),
                         Color(0xFF6EB4FF)
                     )
                 ),
-                fillWidth = false,
+                expand = false,
                 modifier = Modifier.padding(top = 4.dp)
             )
 
@@ -200,10 +195,10 @@ fun ShopScreen(
             val price = item.nextPrice
 
             if (price == null) {
-                PrimaryButton(
-                    text = "MAXED",
-                    onClick = {},
-                    style = ChickenButtonStyle.Blue,
+                ActionButton(
+                    label = "MAXED",
+                    onPress = {},
+                    variant = ChickenButtonStyleVariant.Blue,
                     modifier = Modifier.fillMaxWidth(0.7f)
                 )
             } else {
@@ -211,13 +206,13 @@ fun ShopScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    PrimaryButton(
-                        text = price.toString(),
-                        onClick = onPurchase,
-                        style = ChickenButtonStyle.Blue,
+                    ActionButton(
+                        label = price.toString(),
+                        onPress = onPurchase,
+                        variant = ChickenButtonStyleVariant.Blue,
                         modifier = Modifier.fillMaxWidth(0.7f),
-                        fontSize = 26.sp,
-                        content = {
+                        labelSize = 26.sp,
+                        extraContent = {
                             Text(
                                 text = price.toString(),
                                 color = Color.White,

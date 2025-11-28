@@ -44,25 +44,25 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    private fun magnetDurationMs(): Long = when (itemLevels["magnet"] ?: 0) {
+    private fun magnetDurationMs(): Long = when (itemLevels["magnet"] ?: 1) {
         1 -> 5_000L
         2 -> 7_000L
         3 -> 10_000L
-        else -> 0L
+        else -> 5_000L
     }
 
-    private fun helmetDurationMs(): Long = when (itemLevels["helmet"] ?: 0) {
+    private fun helmetDurationMs(): Long = when (itemLevels["helmet"] ?: 1) {
         1 -> 5_000L
         2 -> 7_000L
         3 -> 10_000L
-        else -> 0L
+        else -> 5_000L
     }
 
-    private fun extraLifeSpawnChance(): Int = when (itemLevels["extra_life"] ?: 0) {
+    private fun extraLifeSpawnChance(): Int = when (itemLevels["extra_life"] ?: 1) {
         1 -> 1
         2 -> 2
         3 -> 3
-        else -> 0
+        else -> 1
     }
 
     fun start() {
@@ -161,7 +161,16 @@ class GameViewModel @Inject constructor(
 
         val updatedItems = lane.items.map { item ->
             val collectEggWithMagnet = item.type == ItemType.Egg && updatedStats.magnetActiveMs > 0
-            val shouldCollect = item.active && (item.column == col || collectEggWithMagnet)
+            val shouldCollect = when {
+                !item.active -> false
+
+
+                item.column == col -> true
+
+                item.type == ItemType.Egg && updatedStats.magnetActiveMs > 0 -> true
+
+                else -> false
+            }
 
             if (shouldCollect) {
                 updated = true
@@ -196,17 +205,23 @@ class GameViewModel @Inject constructor(
     private fun collide(stats: GameStats, lane: LaneSegment?, col: Int): Pair<GameStats, LaneSegment?> {
         if (lane == null || lane.type != LaneType.Railway) return stats to null
         val tr = lane.trolley ?: return stats to null
+
         val dx = abs(col - tr.position)
-        val t = GameConfig.trolleyCollisionThreshold
-        val collided = dx < t
+        val collided = dx < GameConfig.trolleyCollisionThreshold
 
         if (!collided) return stats to null
 
-        val updatedStats = if (stats.helmetActiveMs > 0) stats.copy(helmetActiveMs = 0, helmetDurationMs = 0)
-        else stats.copy(lives = stats.lives - 1)
+        if (stats.helmetActiveMs > 0) {
+            return stats.copy(
+                helmetActiveMs = 0,
+                helmetDurationMs = 0
+            ) to lane.copy(trolley = null)
+        }
 
+        val updatedStats = stats.copy(lives = stats.lives - 1)
         return updatedStats to lane.copy(trolley = null)
     }
+
 
     private fun tick() {
         ticker?.cancel()
@@ -315,22 +330,24 @@ class GameViewModel @Inject constructor(
         val item = loot()
         return LaneSegment(i, LaneType.Railway, t, listOfNotNull(item))
     }
-
     private fun loot(): GameItem? {
         val r = Random.nextInt(0, 100)
         val c = GameConfig.columns.random()
-        val extraLifeChance = extraLifeSpawnChance()
+
+        val life = extraLifeSpawnChance()
+
         return when {
             r < 90 -> GameItem(c, ItemType.Egg)
-            r < 94 -> GameItem(c, ItemType.Helmet)
-            r < 98 -> GameItem(c, ItemType.Magnet)
-            r < 98 + extraLifeChance -> GameItem(c, ItemType.ExtraLife)
+            r < 92 -> GameItem(c, ItemType.Helmet)
+            r < 94 -> GameItem(c, ItemType.Magnet)
+            r < 94 + life -> GameItem(c, ItemType.ExtraLife)
             else -> null
         }
     }
 
     private fun startState(): GameUiState {
         val s = buildList {
+            add(LaneSegment(-1, LaneType.Railway, null, emptyList()))
             add(LaneSegment(0, LaneType.SafeZone, null, emptyList()))
             addAll((1..GameConfig.initialLanesAhead).map { make(it, this) })
         }
@@ -354,8 +371,28 @@ class GameViewModel @Inject constructor(
     }
 
     private fun cam(st: GameUiState): Float {
-        val t = h(st, st.chickenLane)
-        val c = st.cameraOffset
-        return c + (t - c) * GameConfig.cameraLerp
+        val target = h(st, st.chickenLane)
+
+        val lagOffset = GameConfig.railwayHeightPx * 0.35f
+
+        val smoothTarget = target - lagOffset
+
+        val current = st.cameraOffset
+
+        val smoothMs = 260f
+
+        return smoothDamp(
+            current = current,
+            target = smoothTarget,
+            smoothTimeMs = smoothMs,
+            frameMs = GameConfig.frameMs.toFloat()
+        )
+    }
+
+
+    private fun smoothDamp(current: Float, target: Float, smoothTimeMs: Float, frameMs: Float): Float {
+        val t = frameMs / smoothTimeMs
+        val factor = 1f - kotlin.math.exp(-t)
+        return current + (target - current) * factor
     }
 }

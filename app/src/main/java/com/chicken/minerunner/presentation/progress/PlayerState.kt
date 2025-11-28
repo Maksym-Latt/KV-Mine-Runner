@@ -10,12 +10,17 @@ data class ShopItemState(
     val title: String,
     val subtitle: String,
     val image: Int,
-    val level: Int = 0,
+    val level: Int = 1,
     val levels: List<ShopItemLevel> = emptyList()
 ) {
-    val dynamicSubtitle: String get() = levels.getOrNull(level)?.description ?: subtitle
-    val maxLevel: Int get() = (levels.lastIndex).coerceAtLeast(0)
-    val nextPrice: Int? get() = levels.getOrNull(level)?.upgradePrice
+    val dynamicSubtitle: String
+        get() = levels.getOrNull(level - 1)?.description ?: subtitle
+
+    val nextPrice: Int?
+        get() = levels.getOrNull(level - 1)?.upgradePrice
+
+    val maxLevel: Int
+        get() = levels.size
 }
 
 data class PlayerState(

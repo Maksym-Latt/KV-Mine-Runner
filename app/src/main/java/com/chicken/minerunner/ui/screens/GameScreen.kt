@@ -51,7 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.chicken.dropper.ui.components.SecondaryButton
+import com.chicken.dropper.ui.components.IconAccentButton
 import com.chicken.minerunner.R
 import com.chicken.minerunner.domain.config.GameConfig
 import com.chicken.minerunner.domain.model.GameStatus
@@ -59,7 +59,7 @@ import com.chicken.minerunner.domain.model.GameUiState
 import com.chicken.minerunner.domain.model.ItemType
 import com.chicken.minerunner.domain.model.LaneType
 import com.chicken.minerunner.domain.model.SwipeDirection
-import com.chicken.minerunner.ui.components.EggCounter
+import com.chicken.minerunner.ui.components.EggCounterBox
 import com.chicken.minerunner.sound.SoundManager
 import com.chicken.minerunner.ui.theme.CopperDark
 
@@ -97,8 +97,9 @@ fun GameScreen(
 
     var lastEggs by remember { mutableIntStateOf(state.stats.eggs) }
     var lastLives by remember { mutableIntStateOf(state.stats.lives) }
-    var magnetActive by remember { mutableStateOf(state.stats.magnetActiveMs > 0) }
-    var helmetActive by remember { mutableStateOf(state.stats.helmetActiveMs > 0) }
+
+    var lastMagnetMs by remember { mutableStateOf(state.stats.magnetActiveMs) }
+    var lastHelmetMs by remember { mutableStateOf(state.stats.helmetActiveMs) }
 
     LaunchedEffect(state.stats.eggs) {
         if (state.stats.eggs > lastEggs) soundManager.playSfx(R.raw.sfx_egg, sfxEnabled)
@@ -108,13 +109,19 @@ fun GameScreen(
         if (state.stats.lives > lastLives) soundManager.playSfx(R.raw.sfx_bonus, sfxEnabled)
         lastLives = state.stats.lives
     }
-    LaunchedEffect(state.stats.magnetActiveMs, state.stats.helmetActiveMs) {
-        val m = state.stats.magnetActiveMs > 0
-        val h = state.stats.helmetActiveMs > 0
-        if (!magnetActive && m) soundManager.playSfx(R.raw.sfx_bonus, sfxEnabled)
-        if (!helmetActive && h) soundManager.playSfx(R.raw.sfx_bonus, sfxEnabled)
-        magnetActive = m
-        helmetActive = h
+    LaunchedEffect(state.stats.magnetActiveMs) {
+        val current = state.stats.magnetActiveMs
+        if (current > lastMagnetMs) {
+            soundManager.playSfx(R.raw.sfx_bonus, sfxEnabled)
+        }
+        lastMagnetMs = current
+    }
+    LaunchedEffect(state.stats.helmetActiveMs) {
+        val current = state.stats.helmetActiveMs
+        if (current > lastHelmetMs) {
+            soundManager.playSfx(R.raw.sfx_bonus, sfxEnabled)
+        }
+        lastHelmetMs = current
     }
     LaunchedEffect(state.status) {
         if (state.status is GameStatus.GameOver) soundManager.playSfx(R.raw.sfx_lose, sfxEnabled)
@@ -138,7 +145,6 @@ fun GameScreen(
 
                             var pointer = down.id
 
-                            // ждём движения или отпускания
                             while (true) {
                                 val event = awaitPointerEvent()
 
@@ -168,11 +174,26 @@ fun GameScreen(
                             }
 
                             if (ax > ay) {
-                                if (dx > 0) onSwipe(SwipeDirection.Right)
-                                else onSwipe(SwipeDirection.Left)
+                                if (dx > 0) {
+                                    if (state.status is GameStatus.Running) {
+                                        soundManager.playSfx(R.raw.sfx_jump, sfxEnabled)
+                                    }
+                                    onSwipe(SwipeDirection.Right)
+                                } else {
+                                    if (state.status is GameStatus.Running) {
+                                        soundManager.playSfx(R.raw.sfx_jump, sfxEnabled)
+                                    }
+                                    onSwipe(SwipeDirection.Left)
+                                }
                             } else {
-                                if (dy < 0) onSwipe(SwipeDirection.Forward)
+                                if (dy < 0) {
+                                    if (state.status is GameStatus.Running) {
+                                        soundManager.playSfx(R.raw.sfx_jump, sfxEnabled)
+                                    }
+                                    onSwipe(SwipeDirection.Forward)
+                                }
                             }
+
                         }
                     }
                 }
@@ -318,9 +339,9 @@ private fun TopPanel(
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        SecondaryButton(
-            icon = rememberVectorPainter(Icons.Default.Pause),
-            onClick = onPause
+        IconAccentButton(
+            iconPainter = rememberVectorPainter(Icons.Default.Pause),
+            onPress = onPause
         )
 
         Column(
@@ -333,9 +354,9 @@ private fun TopPanel(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                EggCounter(
-                    count = state.stats.eggs,
-                    eggIcon = R.drawable.item_egg
+                EggCounterBox(
+                    amount = state.stats.eggs,
+                    iconRes = R.drawable.item_egg
                 )
             }
 

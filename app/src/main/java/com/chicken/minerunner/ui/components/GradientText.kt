@@ -12,7 +12,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -24,18 +23,18 @@ import androidx.compose.ui.unit.sp
 import com.chicken.minerunner.R
 
 @Composable
-fun GradientOutlinedText(
+fun GradientText(
     text: String,
     modifier: Modifier = Modifier,
 
-    fillWidth: Boolean = true,
-    textAlign: TextAlign = TextAlign.Center,
+    expand: Boolean = true,
+    alignment: TextAlign = TextAlign.Center,
 
-    fontSize: TextUnit = 48.sp,
-    outlineWidth: Float = 8f,
-    outlineColor: Color = Color(0xff332000),
+    size: TextUnit = 48.sp,
+    stroke: Float = 8f,
+    strokeColor: Color = Color(0xff332000),
 
-    gradient: Brush = Brush.horizontalGradient(
+    brush: Brush = Brush.horizontalGradient(
         colors = listOf(
             Color(0xffffffff),
             Color(0xffffffff),
@@ -43,42 +42,42 @@ fun GradientOutlinedText(
         )
     )
 ) {
-    val fontFamily = remember {
+    val typeFace = remember {
         FontFamily(Font(R.font.mochiy_pop_one_regular, weight = FontWeight.ExtraBold))
     }
 
-    val styledText = MaterialTheme.typography.displayLarge.copy(
-        fontSize = fontSize,
+    val baseStyle = MaterialTheme.typography.displayLarge.copy(
+        fontSize = size,
         fontWeight = FontWeight.ExtraBold,
-        fontFamily = fontFamily,
-        textAlign = textAlign
+        fontFamily = typeFace,
+        textAlign = alignment
     )
 
-    val internalModifier = if (fillWidth) Modifier.fillMaxWidth() else Modifier
+    val widthModifier = if (expand) Modifier.fillMaxWidth() else Modifier
 
     Box(modifier = modifier) {
 
         val gradientText = buildAnnotatedString {
-            withStyle(SpanStyle(brush = gradient)) { append(text) }
+            withStyle(SpanStyle(brush = brush)) { append(text) }
         }
 
         Text(
             text = text,
-            style = styledText.copy(
-                color = outlineColor,
+            style = baseStyle.copy(
+                color = strokeColor,
                 drawStyle = Stroke(
-                    width = outlineWidth,
+                    width = stroke,
                     join = StrokeJoin.Round
                 )
             ),
-            modifier = internalModifier
+            modifier = widthModifier
         )
 
         Text(
             text = gradientText,
-            style = styledText,
+            style = baseStyle,
             color = Color.White,
-            modifier = internalModifier
+            modifier = widthModifier
         )
     }
 }

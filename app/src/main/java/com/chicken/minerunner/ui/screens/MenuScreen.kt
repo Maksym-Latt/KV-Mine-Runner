@@ -1,7 +1,6 @@
 package com.chicken.minerunner.ui.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,26 +10,23 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.chicken.dropper.ui.components.ChickenButtonStyle
-import com.chicken.dropper.ui.components.PrimaryButton
-import com.chicken.dropper.ui.components.SecondaryButton
+import com.chicken.dropper.ui.components.ChickenButtonStyleVariant
+import com.chicken.dropper.ui.components.ActionButton
+import com.chicken.dropper.ui.components.IconAccentButton
 import com.chicken.minerunner.R
-import com.chicken.minerunner.ui.components.EggCounter
-import com.chicken.minerunner.ui.components.GameTitle
-import com.chicken.minerunner.ui.theme.CopperDark
-import com.chicken.minerunner.ui.theme.OverlayBlue
+import com.chicken.minerunner.ui.components.EggCounterBox
+import com.chicken.minerunner.ui.components.GameTitleColumn
+
 @Composable
 fun MenuScreen(
     eggs: Int,
@@ -69,21 +65,21 @@ fun MenuScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                SecondaryButton(
-                    icon = rememberVectorPainter(Icons.Default.Settings),
-                    onClick = onMenuClick,
+                IconAccentButton(
+                    iconPainter = rememberVectorPainter(Icons.Default.Settings),
+                    onPress = onMenuClick,
                 )
 
-                EggCounter(
-                    count = eggs,
-                    eggIcon = R.drawable.item_egg,
+                EggCounterBox(
+                    amount = eggs,
+                    iconRes = R.drawable.item_egg,
                     modifier = Modifier
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            GameTitle(
+            GameTitleColumn(
                 modifier = Modifier
                     .padding(top = 32.dp)
             )
@@ -102,18 +98,18 @@ fun MenuScreen(
 
             Spacer(modifier = Modifier.weight(5f))
 
-            PrimaryButton(
-                text = "START",
-                onClick = onStart,
+            ActionButton(
+                label = "START",
+                onPress = onStart,
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            PrimaryButton(
-                text = "SHOP",
-                onClick = onShop,
-                style = ChickenButtonStyle.Blue,
+            ActionButton(
+                label = "SHOP",
+                onPress = onShop,
+                variant = ChickenButtonStyleVariant.Blue,
                 modifier = Modifier.fillMaxWidth()
             )
 

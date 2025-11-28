@@ -31,9 +31,8 @@ class PlayerRepositoryImpl @Inject constructor(
             subtitle = "Magnet up to 10 seconds",
             image = com.chicken.minerunner.R.drawable.item_magnet,
             levels = listOf(
-                ShopItemLevel(description = "Magnet works for 5 seconds", upgradePrice = 1499),
-                ShopItemLevel(description = "Magnet works for 5 seconds", upgradePrice = 2998),
-                ShopItemLevel(description = "Magnet works for 7 seconds", upgradePrice = 4497),
+                ShopItemLevel(description = "Magnet works for 5 seconds", upgradePrice = 500),
+                ShopItemLevel(description = "Magnet works for 7 seconds", upgradePrice = 700),
                 ShopItemLevel(description = "Magnet works for 10 seconds", upgradePrice = null)
             )
         ),
@@ -43,9 +42,8 @@ class PlayerRepositoryImpl @Inject constructor(
             subtitle = "Invulnerability up to 10 seconds",
             image = com.chicken.minerunner.R.drawable.item_helmet,
             levels = listOf(
-                ShopItemLevel(description = "Invulnerability for 5 seconds", upgradePrice = 5499),
-                ShopItemLevel(description = "Invulnerability for 5 seconds", upgradePrice = 10998),
-                ShopItemLevel(description = "Invulnerability for 7 seconds", upgradePrice = 16497),
+                ShopItemLevel(description = "Invulnerability for 5 seconds", upgradePrice = 500),
+                ShopItemLevel(description = "Invulnerability for 7 seconds", upgradePrice = 700),
                 ShopItemLevel(description = "Invulnerability for 10 seconds", upgradePrice = null)
             )
         ),
@@ -55,9 +53,8 @@ class PlayerRepositoryImpl @Inject constructor(
             subtitle = "Increase extra life spawn",
             image = com.chicken.minerunner.R.drawable.item_extra_life,
             levels = listOf(
-                ShopItemLevel(description = "Extra life spawn chance 1%", upgradePrice = 8499),
-                ShopItemLevel(description = "Extra life spawn chance 1%", upgradePrice = 16998),
-                ShopItemLevel(description = "Extra life spawn chance 2%", upgradePrice = 25497),
+                ShopItemLevel(description = "Extra life spawn chance 1%", upgradePrice = 700),
+                ShopItemLevel(description = "Extra life spawn chance 2%", upgradePrice = 1000),
                 ShopItemLevel(description = "Extra life spawn chance 3%", upgradePrice = null)
             )
         )
@@ -67,7 +64,7 @@ class PlayerRepositoryImpl @Inject constructor(
     override val state: Flow<PlayerState> = preferencesDataSource.state.map { prefs ->
 
         val items = baseItems.map { base ->
-            val level = prefs.itemLevels[base.id] ?: 0
+            val level = prefs.itemLevels[base.id] ?: 1
             ShopItemState(
                 id = base.id,
                 title = base.title,

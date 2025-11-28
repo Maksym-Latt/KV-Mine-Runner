@@ -138,12 +138,6 @@ fun AppRootNavigation() {
             GameScreen(
                 state = state,
                 onSwipe = { direction ->
-                    if (direction == SwipeDirection.Forward) {
-                        soundManager.playSfx(
-                            R.raw.sfx_jump,
-                            progressState.sfxEnabled
-                        )
-                    }
                     gameViewModel.swipe(direction)
                 },
                 onPause = gameViewModel::pause,

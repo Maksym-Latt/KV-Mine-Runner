@@ -5,18 +5,13 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,11 +21,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.chicken.dropper.ui.components.ChickenButtonStyle
-import com.chicken.dropper.ui.components.PrimaryButton
-import com.chicken.dropper.ui.components.SecondaryButton
-import com.chicken.minerunner.ui.components.GradientOutlinedText
-import com.chicken.minerunner.ui.theme.OverlayBlue
+import com.chicken.dropper.ui.components.ChickenButtonStyleVariant
+import com.chicken.dropper.ui.components.ActionButton
+import com.chicken.dropper.ui.components.IconAccentButton
+import com.chicken.minerunner.ui.components.GradientText
 
 
 @Composable
@@ -50,9 +44,9 @@ fun PauseOverlay(
             modifier = Modifier
                 .padding(top = 24.dp, start = 24.dp)
         ) {
-            SecondaryButton(
-                icon = rememberVectorPainter(Icons.Default.ArrowBackIosNew),
-                onClick = onResume
+            IconAccentButton(
+                iconPainter = rememberVectorPainter(Icons.Default.ArrowBackIosNew),
+                onPress = onResume
             )
         }
 
@@ -83,13 +77,13 @@ fun PauseOverlay(
             ) {
 
                 // ---- TITLE ----
-                GradientOutlinedText(
+                GradientText(
                     text = "Paused",
-                    fontSize = 32.sp,
-                    outlineWidth = 5f,
-                    outlineColor = Color(0xFF0A3C80),
-                    fillWidth = false,
-                    gradient = Brush.horizontalGradient(
+                    size = 32.sp,
+                    stroke = 5f,
+                    strokeColor = Color(0xFF0A3C80),
+                    expand = false,
+                    brush = Brush.horizontalGradient(
                         listOf(
                             Color.White,
                             Color(0xFFEAF7FF),
@@ -99,29 +93,29 @@ fun PauseOverlay(
                 )
 
                 // ---- RESUME ----
-                PrimaryButton(
-                    text = "Resume",
-                    onClick = onResume,
-                    style = ChickenButtonStyle.Blue,
-                    fontSize = 22.sp,
+                ActionButton(
+                    label = "Resume",
+                    onPress = onResume,
+                    variant = ChickenButtonStyleVariant.Blue,
+                    labelSize = 22.sp,
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 // ---- RESTART (новая кнопка) ----
-                PrimaryButton(
-                    text = "Restart",
-                    onClick = onRestart,
-                    style = ChickenButtonStyle.Blue,
-                    fontSize = 22.sp,
+                ActionButton(
+                    label = "Restart",
+                    onPress = onRestart,
+                    variant = ChickenButtonStyleVariant.Blue,
+                    labelSize = 22.sp,
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 // ---- MAIN MENU ----
-                PrimaryButton(
-                    text = "Main menu",
-                    onClick = onExit,
-                    style = ChickenButtonStyle.Blue,
-                    fontSize = 22.sp,
+                ActionButton(
+                    label = "Main menu",
+                    onPress = onExit,
+                    variant = ChickenButtonStyleVariant.Blue,
+                    labelSize = 22.sp,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

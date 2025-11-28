@@ -21,47 +21,47 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun SecondaryButton(
+fun IconAccentButton(
     iconPainter: Painter,
-    onClick: () -> Unit,
+    onPress: () -> Unit,
     modifier: Modifier = Modifier,
 
-    gradient: Brush = Brush.horizontalGradient(
+    brush: Brush = Brush.horizontalGradient(
         listOf(
             Color(0xff286298),
             Color(0xff519ee4),
             Color(0xff296398)
         )
     ),
-    borderColor: Color = Color(0xff000000),
+    strokeColor: Color = Color(0xff000000),
 
-    buttonSize: Dp = 60.dp,
-    iconSize: Dp = 30.dp,
-    cornerRadius: Dp = 14.dp
+    size: Dp = 60.dp,
+    iconScale: Dp = 30.dp,
+    radius: Dp = 14.dp
 ) {
     Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(cornerRadius),
+        onClick = onPress,
+        shape = RoundedCornerShape(radius),
         color = Color.Transparent,
-        border = BorderStroke(2.dp, borderColor),
+        border = BorderStroke(2.dp, strokeColor),
         modifier = modifier
-            .size(buttonSize)
+            .size(size)
             .shadow(
                 elevation = 8.dp,
-                shape = RoundedCornerShape(cornerRadius),
+                shape = RoundedCornerShape(radius),
                 clip = false
             )
     ) {
         Box(
             modifier = Modifier
-                .background(gradient)
-                .padding(buttonSize * 0.17f),
+                .background(brush)
+                .padding(size * 0.17f),
             contentAlignment = Alignment.Center
         ) {
             Image(
                 painter = iconPainter,
                 contentDescription = null,
-                modifier = Modifier.size(iconSize)
+                modifier = Modifier.size(iconScale)
             )
         }
     }
