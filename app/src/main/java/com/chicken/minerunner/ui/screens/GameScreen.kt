@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -88,16 +89,6 @@ fun GameScreen(
     sfxEnabled: Boolean,
     soundManager: SoundManager,
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, e ->
-            if (e == Lifecycle.Event.ON_STOP) onPause()
-            if (e == Lifecycle.Event.ON_RESUME) onResume()
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
     LaunchedEffect(musicEnabled, state.status) {
         if (state.status !is GameStatus.GameOver) soundManager.playGameMusic(musicEnabled)
     }
@@ -148,20 +139,25 @@ fun GameScreen(
         }
     }
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentStatus by rememberUpdatedState(state.status)
+    val currentOnPause by rememberUpdatedState(onPause)
+    val currentOnResume by rememberUpdatedState(onResume)
+
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
 
             when (event) {
 
                 Lifecycle.Event.ON_PAUSE -> {
-                    if (state.status is GameStatus.Running) {
-                        onPause()
+                    if (currentStatus is GameStatus.Running) {
+                        currentOnPause()
                     }
                 }
 
                 Lifecycle.Event.ON_RESUME -> {
-                    if (state.status is GameStatus.Paused) {
-                        onResume()
+                    if (currentStatus is GameStatus.Paused) {
+                        currentOnResume()
                     }
                 }
 
