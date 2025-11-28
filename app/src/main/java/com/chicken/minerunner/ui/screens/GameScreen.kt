@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -47,11 +48,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.chicken.dropper.ui.components.ActionButton
+import com.chicken.dropper.ui.components.ChickenButtonStyleVariant
 import com.chicken.dropper.ui.components.IconAccentButton
 import com.chicken.minerunner.R
 import com.chicken.minerunner.domain.config.GameConfig
@@ -60,6 +64,7 @@ import com.chicken.minerunner.domain.model.GameUiState
 import com.chicken.minerunner.domain.model.ItemType
 import com.chicken.minerunner.domain.model.LaneType
 import com.chicken.minerunner.domain.model.SwipeDirection
+import com.chicken.minerunner.ui.components.GradientText
 import com.chicken.minerunner.ui.components.EggCounterBox
 import com.chicken.minerunner.sound.SoundManager
 import com.chicken.minerunner.ui.theme.CopperDark
@@ -72,11 +77,12 @@ fun GameScreen(
     onSwipe: (SwipeDirection) -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit,
+    onStartRun: () -> Unit,
     onExit: () -> Unit,
+    onRetry: () -> Unit,
     musicEnabled: Boolean,
     sfxEnabled: Boolean,
     soundManager: SoundManager,
-    onGameOver: () -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -86,10 +92,6 @@ fun GameScreen(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    LaunchedEffect(state.status) {
-        if (state.status is GameStatus.GameOver) onGameOver()
     }
 
     LaunchedEffect(musicEnabled, state.status) {
@@ -332,6 +334,18 @@ fun GameScreen(
         if (state.status is GameStatus.Paused) {
             PauseOverlay(onResume = onResume, onRestart = onExit, onExit = onExit)
         }
+
+        if (state.status is GameStatus.Ready) {
+            GameIntroOverlay(onStart = onStartRun)
+        }
+
+        if (state.status is GameStatus.GameOver) {
+            GameOverScreen(
+                reward = state.stats.eggs,
+                onRetry = onRetry,
+                onLobby = onExit
+            )
+        }
     }
 }
 
@@ -407,6 +421,49 @@ private fun TopPanel(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun GameIntroOverlay(onStart: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.45f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            GradientText(
+                text = "Как играть", 
+                size = 34.sp,
+                stroke = 7f,
+                strokeColor = Color.Black,
+                brush = Brush.horizontalGradient(
+                    listOf(Color(0xfff7b733), Color(0xfffc4a1a))
+                )
+            )
+
+            Text(
+                text = "Свайпайте влево и вправо, чтобы менять рельсы.\nСвайп вверх, чтобы бежать вперед и собирать яйца.\nИзбегайте вагонеток или наденьте шлем, чтобы пережить удар!",
+                color = Color.White,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center
+            )
+
+            ActionButton(
+                label = "Побежали!",
+                onPress = onStart,
+                labelSize = 22.sp,
+                variant = ChickenButtonStyleVariant.Blue,
+                modifier = Modifier.fillMaxWidth(0.8f)
+            )
         }
     }
 }

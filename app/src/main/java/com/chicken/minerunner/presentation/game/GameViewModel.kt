@@ -66,9 +66,13 @@ class GameViewModel @Inject constructor(
     }
 
     fun start() {
-        _ui.value = startState().copy(status = GameStatus.Running)
+        _ui.value = startState()
         reward = false
         tick()
+    }
+
+    fun begin() {
+        _ui.update { it.copy(status = GameStatus.Running) }
     }
 
     fun pause() {
