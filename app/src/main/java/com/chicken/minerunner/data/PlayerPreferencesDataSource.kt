@@ -24,7 +24,7 @@ class PlayerPreferencesDataSource @Inject constructor(
 
     private val dataStore = context.playerDataStore
 
-    private val defaultEggs = 188880
+    private val defaultEggs = 0
 
     private object Keys {
         val eggs = intPreferencesKey("eggs")

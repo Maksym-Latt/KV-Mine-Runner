@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MineRunnerTheme {
-                AppRootNavigation()
+                AppRootNavigation(soundManager)
             }
         }
     }

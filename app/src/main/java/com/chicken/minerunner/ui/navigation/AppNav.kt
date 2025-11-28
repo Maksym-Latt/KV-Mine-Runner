@@ -36,7 +36,7 @@ sealed class Destinations(val route: String) {
 }
 
 @Composable
-fun AppRootNavigation() {
+fun AppRootNavigation(soundManager: SoundManager) {
     val navController = rememberNavController()
 
     val gameViewModel: GameViewModel = hiltViewModel()

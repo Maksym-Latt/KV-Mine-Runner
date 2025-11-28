@@ -1,6 +1,7 @@
 package com.chicken.minerunner.ui.screens
 
 import android.annotation.SuppressLint
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -54,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.chicken.dropper.ui.components.ActionButton
 import com.chicken.dropper.ui.components.ChickenButtonStyleVariant
 import com.chicken.dropper.ui.components.IconAccentButton
@@ -128,6 +133,46 @@ fun GameScreen(
     LaunchedEffect(state.status) {
         if (state.status is GameStatus.GameOver) soundManager.playSfx(R.raw.sfx_lose, sfxEnabled)
     }
+
+    BackHandler(enabled = true) {
+        when (state.status) {
+            is GameStatus.Running -> {
+                onPause()
+            }
+            is GameStatus.Paused -> {
+                onExit()
+            }
+            else -> {
+                onExit()
+            }
+        }
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+
+            when (event) {
+
+                Lifecycle.Event.ON_PAUSE -> {
+                    if (state.status is GameStatus.Running) {
+                        onPause()
+                    }
+                }
+
+                Lifecycle.Event.ON_RESUME -> {
+                    if (state.status is GameStatus.Paused) {
+                        onResume()
+                    }
+                }
+
+                else -> Unit
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         var showIntro by remember { mutableStateOf(true) }
@@ -325,14 +370,12 @@ fun GameScreen(
         TopPanel(
             state = state,
             onPause = onPause,
-            onExit = onExit,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 12.dp)
         )
 
         if (state.status is GameStatus.Paused) {
-            PauseOverlay(onResume = onResume, onRestart = onExit, onExit = onExit)
+            PauseOverlay(onResume = onResume, onRestart = onRetry, onExit = onExit)
         }
 
         if (showIntro) {
@@ -353,13 +396,13 @@ fun GameScreen(
 private fun TopPanel(
     state: GameUiState,
     onPause: () -> Unit,
-    onExit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 24.dp)
+            .windowInsetsPadding(WindowInsets.displayCutout),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
