@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.changedToUp
@@ -229,8 +230,12 @@ fun GameScreen(
                 laneHeights[seg.index] = y to lh
 
                 val p: Painter =
-                    if (seg.type == LaneType.SafeZone) painterResource(R.drawable.save_zone)
-                    else painterResource(R.drawable.railway)
+                    if (seg.type == LaneType.SafeZone)
+                        painterResource(R.drawable.save_zone)
+                    else
+                        painterResource(R.drawable.railway)
+
+                val isFlipped = seg.type == LaneType.SafeZone && seg.flipped
 
                 Image(
                     painter = p,
@@ -238,9 +243,14 @@ fun GameScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(lhd)
-                        .offset(y = with(density) { y.toDp() }),
+                        .offset(y = with(density) { y.toDp() })
+                        .graphicsLayer {
+                            rotationZ = if (isFlipped) 180f else 0f
+                            scaleX = if (isFlipped) -1f else 1f
+                        },
                     contentScale = ContentScale.FillBounds
                 )
+
 
                 seg.items.filter { it.active }.forEach {
                     val ip = when (it.type) {

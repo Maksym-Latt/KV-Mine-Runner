@@ -12,7 +12,8 @@ data class LaneSegment(
     val index: Int,
     val type: LaneType,
     val trolley: Trolley?,
-    val items: List<GameItem>
+    val items: List<GameItem>,
+    val flipped: Boolean = false
 )
 
 data class Trolley(

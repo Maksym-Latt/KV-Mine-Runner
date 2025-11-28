@@ -313,8 +313,9 @@ class GameViewModel @Inject constructor(
     }
 
     private fun make(i: Int, ex: List<LaneSegment>): LaneSegment {
-        if (i == 0) return LaneSegment(i, LaneType.SafeZone, null, emptyList())
-        if (i % 6 == 0) return LaneSegment(i, LaneType.SafeZone, null, emptyList())
+        if (i == 0 || i % 6 == 0) {
+            return LaneSegment(i, LaneType.SafeZone, null, emptyList(), flipped = false)
+        }
 
         val spawn = Random.nextFloat() < GameConfig.trolleySpawnChance
         val t = if (spawn)
@@ -347,8 +348,13 @@ class GameViewModel @Inject constructor(
 
     private fun startState(): GameUiState {
         val s = buildList {
-            add(LaneSegment(-1, LaneType.Railway, null, emptyList()))
-            add(LaneSegment(0, LaneType.SafeZone, null, emptyList()))
+            // 🔥 Два островка SafeZone в начале
+            add(LaneSegment(-1, LaneType.SafeZone, null, emptyList(), flipped = true))
+
+            // Основной стартовый
+            add(LaneSegment(0, LaneType.SafeZone, null, emptyList(), flipped = false))
+
+            // Дальше генератор как раньше
             addAll((1..GameConfig.initialLanesAhead).map { make(it, this) })
         }
         return GameUiState(
