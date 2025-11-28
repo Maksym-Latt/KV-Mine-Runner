@@ -21,7 +21,10 @@ class SoundManager @Inject constructor(
     private enum class Channel { MENU, GAME }
 
     private var currentChannel: Channel? = null
-    private var resumeAfterLifecyclePause = false
+
+    // --- новый двухконтурный контроль ---
+    private var systemPaused = false
+    private var gamePaused = false
 
     private val musicPlayers = mutableMapOf<Channel, MediaPlayer>()
 
@@ -52,7 +55,10 @@ class SoundManager @Inject constructor(
         }
     }
 
-    // ---- MUSIC ----
+
+    // ============================================================
+    //                 MUSIC CHANNEL BASICS
+    // ============================================================
 
     fun playMenuMusic(enabled: Boolean) {
         if (!enabled) return stopMusic()
@@ -80,10 +86,11 @@ class SoundManager @Inject constructor(
                 it.start()
             } catch (_: IllegalStateException) {
                 musicPlayers.remove(channel)
+                currentChannel = null
             }
         }
 
-        resumeAfterLifecyclePause = false
+        updatePlayback()
     }
 
     private fun ensurePlayer(channel: Channel, @RawRes res: Int): MediaPlayer? {
@@ -103,39 +110,64 @@ class SoundManager @Inject constructor(
             musicPlayers[ch]?.seekTo(0)
         }
         currentChannel = null
-        resumeAfterLifecyclePause = false
     }
 
+
+    // ============================================================
+    //                SYSTEM & GAME PAUSE LOGIC
+    // ============================================================
+
+    /** Вызов из MainActivity.onPause() */
     fun pauseForLifecycle() {
-        currentChannel?.let { ch ->
-            musicPlayers[ch]?.let { mp ->
-                if (mp.isPlaying) {
-                    resumeAfterLifecyclePause = true
-                    mp.pause()
-                }
-            }
-        }
+        systemPaused = true
+        updatePlayback()
     }
 
+    /** Вызов из MainActivity.onResume() */
     fun resumeAfterLifecycle() {
-        if (!resumeAfterLifecyclePause) return
-        resumeAfterLifecyclePause = false
+        systemPaused = false
+        updatePlayback()
+    }
 
-        currentChannel?.let { ch ->
-            musicPlayers[ch]?.let { mp ->
-                if (!mp.isPlaying) {
-                    try {
-                        mp.start()
-                    } catch (_: IllegalStateException) {
-                        musicPlayers.remove(ch)
-                        currentChannel = null
-                    }
+    /** Пауза через меню игры */
+    fun pauseForGame() {
+        gamePaused = true
+        updatePlayback()
+    }
+
+    /** Продолжение игры */
+    fun resumeForGame() {
+        gamePaused = false
+        updatePlayback()
+    }
+
+    /**
+     * Централизованная логика:
+     * Музыка играет ТОЛЬКО если:
+     * !systemPaused && !gamePaused && currentChannel != null
+     */
+    private fun updatePlayback() {
+        val ch = currentChannel ?: return
+        val mp = musicPlayers[ch] ?: return
+
+        if (systemPaused || gamePaused) {
+            if (mp.isPlaying) mp.pause()
+        } else {
+            if (!mp.isPlaying) {
+                try {
+                    mp.start()
+                } catch (_: IllegalStateException) {
+                    musicPlayers.remove(ch)
+                    currentChannel = null
                 }
             }
         }
     }
 
-    // ---- SFX ----
+
+    // ============================================================
+    //                           SFX
+    // ============================================================
 
     fun playSfx(@RawRes resId: Int, enabled: Boolean) {
         if (!enabled) return

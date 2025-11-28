@@ -2,6 +2,7 @@ package com.chicken.minerunner.ui.screens
 
 import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -33,8 +34,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -89,12 +90,29 @@ fun GameScreen(
     sfxEnabled: Boolean,
     soundManager: SoundManager,
 ) {
+    val status by rememberUpdatedState(state.status)
+
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, e ->
-            if (e == Lifecycle.Event.ON_STOP) onPause()
-            if (e == Lifecycle.Event.ON_RESUME) onResume()
+        val observer = LifecycleEventObserver { _, event ->
+
+            when (event) {
+
+                Lifecycle.Event.ON_PAUSE,
+                Lifecycle.Event.ON_STOP -> {
+                    if (status is GameStatus.Running) {
+                        onPause()    // ← теперь сработает ВСЕГДА
+                    }
+                }
+
+                Lifecycle.Event.ON_RESUME -> {
+
+                }
+
+                else -> Unit
+            }
         }
+
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
@@ -136,17 +154,17 @@ fun GameScreen(
         if (state.status is GameStatus.GameOver) soundManager.playSfx(R.raw.sfx_lose, sfxEnabled)
     }
 
+    val activity = LocalActivity.current
     BackHandler(enabled = true) {
         when (state.status) {
-            is GameStatus.Running -> {
-                onPause()
-            }
+
+            is GameStatus.Running -> onPause()
+
             is GameStatus.Paused -> {
-                onExit()
+                activity?.moveTaskToBack(true)
             }
-            else -> {
-                onExit()
-            }
+
+            else -> onExit()
         }
     }
 
@@ -355,7 +373,9 @@ fun GameScreen(
         }
 
         if (showIntro) {
-            GameIntroOverlay(onStart = { showIntro = false })
+            GameIntroOverlay(onStart = {
+                showIntro = false
+                onResume()})
         }
 
         if (state.status is GameStatus.GameOver) {
